@@ -8,6 +8,8 @@
 ; modify the text by the given text
 
 ; for debugging
+; TODO: do NOT use global variables (affects on others)
+;       do NOT depend on global variables (others can override it)
 (define debug #f)
 
 (define (spawn-text-layer inImage inDrawable inText)
