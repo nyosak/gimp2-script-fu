@@ -2,20 +2,16 @@
 ; copyright 2025, hanagai
 ;
 ; spawn_text_layer.scm
-; version: March 8, 2025
+; version: March 10, 2025
 ;
 ; duplicates current layter (must be a text layer)
 ; modify the text by the given text
-
-; for debugging
-; TODO: do NOT use global variables (affects on others)
-;       do NOT depend on global variables (others can override it)
-(define debug #f)
+; center the new layer
 
 (define (spawn-text-layer inImage inDrawable inText)
 
   (let* (
-          ; define our local variables
+          ; define local variables
           (image inImage) ; the image to work on
           (layer inDrawable)  ; the layer to work on
           (inText inText)  ; the text to be set
@@ -25,9 +21,80 @@
 
           (UPON_LAYER -1)  ; the layer to be created upon
           (NO_PARENT_LAYER 0)  ; no parent layer
-          (MESSAGE-DONE "Done!")  ; message to show when done (debug only)
+          (MESSAGE-DONE "Done!")  ; message to show when done
           (MESSAGE_ERROR_NOT_TEXT_LAYTER "The selected layer is not a text layer.")
-    ) ;end of our local variables
+    ) ;end of local variables
+
+    ;;
+    ;; helper functions
+
+    ; translate the new layer to the center of the image
+    (define (center-layer image layer)
+      (let* (
+              (imageWidth (car (gimp-image-width image)))  ; the width of the image
+              (imageHeight (car (gimp-image-height image)))  ; the height of the image
+              (layerWidth (car (gimp-drawable-width layer)))  ; the width of the layer
+              (layerHeight (car (gimp-drawable-height layer)))  ; the height of the layer
+              (offsetX (- (/ imageWidth 2) (/ layerWidth 2)))  ; the x offset
+              (offsetY (- (/ imageHeight 2) (/ layerHeight 2)))  ; the y offset
+        )
+;        (debug "center-layer: (imageWidth" imageWidth ", imageHeight" imageHeight ") (layerWidth" layerWidth ", layerHeight" layerHeight ") (offsetX" offsetX ", offsetY" offsetY ")")
+
+        (gimp-layer-set-offsets layer offsetX offsetY)
+      )
+    )
+
+    ; from types.scm
+    ;
+    ; is-blank?: string -> boolean
+    ; string is blank, or not
+    ; Returns #t if the string is blank, otherwise #f.
+    ; (is-blank? "") ; Returns #t
+    ; (is-blank? "not blank") ; Returns #f
+    (define (is-blank? str)
+      (if (string=? "" str) #t #f))
+
+    ; int->boolean: int(TRUE/FALSE) -> boolean
+    ; Convert int to boolean
+    ; Returns #t if the int is 1, otherwise #f.
+    ; on TinyScheme, TRUE and FALSE are not defined.
+    ;   (int->boolean 1) ; Returns #t
+    ;   (int->boolean 0) ; Returns #f
+    ; on GIMP Script-Fu Console, TRUE and FALSE are defined as 1 and 0.
+    ;   (int->boolean TRUE) ; Returns #t
+    ;   (int->boolean FALSE) ; Returns #f
+    (define (int->boolean int)
+      ;(if (eqv? (if (defined? 'TRUE) TRUE 1) int) #t #f))
+      (if (eqv? TRUE int) #t #f))
+
+    ; from test.scm
+
+    ; on GIMP Script-Fu Console
+    (define (debug obj1 . objn)
+      ;(gimp-message (apply stringify (cons #\NewLine (cons obj1 objn))))
+      (gimp-message (apply stringify (cons #\Space (cons obj1 objn))))
+    )
+
+    ; stringify: object list -> string (with delimited)
+    (define (stringify delimiter . objects)
+      (let *
+        ((port (open-output-string)))
+
+        (define (write-to-string delimiter objects port)
+          (unless (eq? () objects)
+            (write (car objects) port)
+            (write-char delimiter port)
+            (write-to-string delimiter (cdr objects) port)
+          )
+        )
+
+        (write-to-string delimiter objects port)
+        (car (cons (get-output-string port) (close-port port)))
+      )
+    )
+
+    ;;
+    ;; process start here
 
     ; maybe not required if harmless.
     ; give "*" for image type that the script works on.
@@ -41,9 +108,9 @@
     ;    )
     ;)
 
-    (if debug (gimp-message (car (gimp-item-get-name layer))))
+;    (debug "Current layer:" (car (gimp-item-get-name layer)))
 
-    (set! layerIsTextLayer (int-to-boolean (car (gimp-item-is-text-layer layer))))
+    (set! layerIsTextLayer (int->boolean (car (gimp-item-is-text-layer layer))))
 
     ; check if the layer is a text layer
     (if (not layerIsTextLayer)
@@ -60,11 +127,13 @@
 
     ; update the text when some text is given
     (if (is-blank? inText)
-        (if debug (gimp-message "No text given."))
+        (begin
+;        (debug "No text given.")
+        )
         (begin
           ; set the text
           (gimp-text-layer-set-text newLayer inText)
-          (if debug (gimp-message "Text updated."))
+;          (debug "Text updated.")
         )
     )
 
@@ -75,55 +144,22 @@
     (gimp-displays-flush)
 
     ; done
-    (if debug (gimp-message MESSAGE-DONE))
-
+;    (debug MESSAGE-DONE)
   )
 )
-
-; translate the new layer to the center of the image
-(define (center-layer image layer)
-  (let* (
-          (imageWidth (car (gimp-image-width image)))  ; the width of the image
-          (imageHeight (car (gimp-image-height image)))  ; the height of the image
-          (layerWidth (car (gimp-drawable-width layer)))  ; the width of the layer
-          (layerHeight (car (gimp-drawable-height layer)))  ; the height of the layer
-          (offsetX (- (/ imageWidth 2) (/ layerWidth 2)))  ; the x offset
-          (offsetY (- (/ imageHeight 2) (/ layerHeight 2)))  ; the y offset
-    )
-    (if debug (gimp-message (string-append "imageWidth: " (number->string imageWidth) ", imageHeight: " (number->string imageHeight) ", layerWidth: " (number->string layerWidth) ", layerHeight: " (number->string layerHeight) ", offsetX: " (number->string offsetX) ", offsetY: " (number->string offsetY))))
-    ; cannot do it
-    ;(use extras)
-    ;(if debug (gimp-message (format #t "image: (~a, ~a), layer: (~a, ~a), offset: (~a, ~a)%" imageWidth imageHeight layerWidth layerHeight offsetX offsetY)))
-
-    (gimp-layer-set-offsets layer offsetX offsetY)
-  )
-)
-
-; string is blank
-(define (is-blank? str)
-  (if (string=? "" str) #t #f))
-
-; int-to-boolean: int(TRUE/FALSE) -> boolean
-(define (int-to-boolean int)
-  (if (eqv? TRUE int) #t #f))
-
-; boolean-to-string: boolean -> string
-(define (boolean-to-string bool)
-  (if (eqv? TRUE bool) "true" "false"))
-
 
 (script-fu-register
-    _"spawn-text-layer"                        ;function name
-    _"Duplicate with New Text..."                                  ;menu label
+    _"spawn-text-layer"                 ;function name
+    _"Duplicate with New Text..."       ;menu label
     "Duplicate text layer. \
-      Change text."              ;description
-    "hanagai"                             ;author
-    "copyright 2025, hanagai"        ;copyright notice
-    "March 8, 2025"                          ;date created
-    "*"                                      ;image type that the script works on
-    SF-IMAGE       "Image"           0         ;an image variable
-    SF-DRAWABLE    "Drawable"        0       ;a drawable variable
-    SF-STRING      _"Text"          ""   ;a string variable
+      Change text."                     ;description
+    "hanagai"                           ;author
+    "copyright 2025, hanagai"           ;copyright notice
+    "March 8, 2025"                     ;date created
+    "*"                                 ;image type that the script works on
+    SF-IMAGE       "Image"           0  ;an image variable
+    SF-DRAWABLE    "Drawable"        0  ;a drawable variable
+    SF-STRING      _"Text"          ""  ;a string variable
 )
 (script-fu-menu-register "spawn-text-layer" "<Image>/Layer/Spawn")
 
