@@ -1,0 +1,266 @@
+; Tiny Scheme tool for unit testing
+; copyright 2025, hanagai
+;
+; test.scm
+; version: March 10, 2025
+;
+; (load "./test.scm")
+; or copy and paste the code to your script
+; define your testCase and run (submit-test testCase)
+
+;;
+;; (debug args ...) : output results
+
+; on TinyScheme
+(define (debug obj1 . objn)
+  (write (stringify #\: (cons obj1 objn)))
+  (newline)
+)
+
+; on GIMP Script-Fu Console
+;(define (debug obj1 . objn)
+;  (gimp-message (stringify #\Space (cons obj1 objn)))
+;)
+
+;;
+;; target functions to test (example)
+
+; string is blank
+(define (example-is-blank? str)
+  (if (string=? "" str) #t #f))
+
+; int-to-boolean: int(TRUE/FALSE) -> boolean
+(define (example-int-to-boolean int)
+  (if (eqv? TRUE int) #t #f))
+
+; boolean-to-string: boolean(TRUE/FALSE) -> string
+(define (example-boolean-to-string bool)
+  (if (eqv? TRUE bool) "true" "false"))
+
+;;
+;; test helper functions
+
+; stringify: object list -> string (with delimited)
+(define (stringify delimiter . objects)
+  (let *
+    ((port (open-output-string)))
+
+    (define (write-to-string delimiter objects port)
+      (unless (eq? () objects)
+        (write (car objects) port)
+        (write-char delimiter port)
+        (write-to-string delimiter (cdr objects) port)
+      )
+    )
+
+    (write-to-string delimiter objects port)
+    (car (cons (get-output-string port) (close-port port)))
+  )
+)
+
+; describe-list: values descriptions -> string
+;    string[0] value[0] string[1] value[1] ... value[n] string[n+1]
+;    if descriptions is shorter than values, use "" for the rest
+(define (describe-list values . descriptions)
+  (define (describe-values values descriptions)
+    (if (eq? () values)
+      (car descriptions)
+      (cons (car descriptions)
+        (cons (car values)
+          (describe-values (cdr values)
+            (if (eq? () (cdr descriptions))
+              (list "")
+              (cdr descriptions)
+            )
+          )
+        )
+      )
+    )
+  )
+
+  (stringify #\Space (describe-values values descriptions))
+)
+
+
+; run-a-case: execute a single test from the case
+; return #t if the test is passed, #f otherwise
+; (run-a-case '(function expected arguments ...))
+(define (run-a-case test)
+  (let*
+    (
+      (function (car test))
+      (expected (cadr test))
+      (arguments (cddr test))
+      (realized (apply (eval function) arguments))
+    )
+    (debug function expected arguments realized)  ; output details
+    (eqv? expected realized)
+  )
+)
+
+; run-cases: execute all tests in the case
+; return a list of #t/#f for each test
+; (run-cases '((function expected arguments ...) ...))
+(define (run-cases testCase)
+  (map run-a-case testCase)
+)
+
+; human-readable-result: convert #t/#f list to "PASS"/"FAIL" list
+; (human-readable-result '(#t #f #t))
+(define (human-readable-result result)
+  (map
+    (lambda (x)
+      (if x
+          "PASS"
+          "FAIL"))
+    result
+  )
+)
+
+; list+: add two numeric lists
+; (list+ '(1 2 3) '(4 5 6))
+; return a list of sum of each element
+(define (list+ list1 list2)
+  (if (or (eq? () list1) (eq? () list2))  ; if either list is empty
+    ()
+    (cons (+ (car list1) (car list2)) (list+ (cdr list1) (cdr list2)))
+  )
+)
+
+; calculate-score: calculate the score from the result
+; (calculate-score '(#t #f #t))
+; return a list of fail, pass, and total
+(define (calculate-score result)
+  (define (count-score result score)
+    (if (eq? () result)
+      score
+      (count-score (cdr result)
+        (list+
+          score
+          (list
+            (if (car result) 0 1)  ; fail
+            (if (car result) 1 0)  ; pass
+            1  ; total
+          )
+        )
+      )
+    )
+  )
+
+  ;                 fail pass total
+  (count-score result '(0 0 0))
+)
+
+; human-readable-score: convert score to human-readable string
+; (human-readable-score '(1 2 3))
+(define (human-readable-score score)
+  ;(describe-list score "Fail" "Pass" "Total")
+  (describe-list score "" "failed." "passed.  Of total" "tests.")
+)
+
+
+; submit-test: run the test case and output the result
+; (submit-test '((function expected arguments ...) ...))
+(define (submit-test testCase)
+  (let*
+    (
+      (result (run-cases testCase))
+      (score (calculate-score result))
+    )
+    (debug (human-readable-result result))
+    (debug (human-readable-score score))
+  )
+)
+
+; test-myself: run self test
+; (test-myself)
+(define (test-myself)
+  (debug "# begin self test.")
+
+  (debug "# stringify")
+  (debug (stringify #\Return "a" "b" "c"))
+  (debug (stringify #\: 1 2 #f stringify "a" '(5 6 7)))
+
+  (debug "# describe-list")
+  (debug (describe-list '(1 2 3) "one" "two" "three"))
+  (debug (describe-list '(1 2 3) "one" "two" "three" "four"))
+  (debug (describe-list '(1 2 3) "one" "two"))
+
+  (debug "# run-a-case")
+  (debug (run-a-case '(example-is-blank? #f "not blank")))
+
+  (debug "# run-cases")
+  (debug (run-cases
+      '(
+
+        (
+          example-is-blank? ; function
+          #f  ; expected return
+          "not blank" ; arguments from here
+        )
+        (
+          example-is-blank? ; function
+          #t  ; expected return
+          "" ; arguments from here
+        )
+        (
+          example-is-blank? ; function
+          #t  ; expected return
+          "blank?" ; arguments from here
+        )
+
+      )
+    )
+  )
+
+  (debug "# human-readable-result")
+  (debug (human-readable-result '(#t #f #t)))
+
+  (debug "# list+")
+  (debug (list+ '(1 2 3) '(4 5 6)))
+  (debug (list+ '(1 2 3) '()))
+  (debug (list+ '() '(4 5 6)))
+  (debug (list+ '() '()))
+  (debug (list+ '(1 2 3) '(4 5)))
+  (debug (list+ '(1 2) '(4 5 6)))
+
+  (debug "# calculate-score")
+  (debug (calculate-score '(#t #f #t)))
+
+  (debug "# human-readable-score")
+  (debug (human-readable-score '(1 2 3)))
+
+  (debug "# submit-test")
+  (example-submit-test)
+
+  (debug "# end self test.")
+)
+
+; example test case
+(define (example-submit-test)
+  (let *
+    (
+      (testCase
+        '(
+
+          (
+            example-is-blank? ; function
+            #f  ; expected return
+            "not blank" ; arguments from here
+          )
+          (
+            example-is-blank? ; function
+            #t  ; expected return
+            "" ; arguments from here
+          )
+
+        )
+      )
+    )
+    (submit-test testCase)
+  )
+)
+
+;(example-submit-test)
+;(test-myself)
+
