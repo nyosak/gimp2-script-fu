@@ -2,11 +2,14 @@
 ; copyright 2025, hanagai
 ;
 ; test.scm
-; version: March 10, 2025
+; version: March 10, 2025; 13:00 JST
 ;
 ; (load "./test.scm")
 ; or copy and paste the code to your script
 ; define your testCase and run (submit-test testCase)
+;
+; know-bugs
+; - See run-a-case definition for the bug on string comparison.
 
 ;;
 ;; (debug args ...) : output results
@@ -94,7 +97,12 @@
       (realized (apply (eval function) arguments))
     )
     (debug function expected arguments realized)  ; output details
+    ;(equal? expected realized)
+    ; use equal? on GIMP Script-Fu Console
     (eqv? expected realized)
+    ; on TinyScheme 1.42 both equal? and string=? fails for string
+    ; `Error: (types.scm : 114) string-ref: index must be exact: 0
+    ; using eqv? always tells #f for string comparison, but still works
   )
 )
 
