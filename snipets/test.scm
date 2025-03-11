@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; test.scm
-; version: March 10, 2025; 17:00 JST
+; version: March 11, 2025
 ;
 ; (load "./test.scm")
 ; or copy and paste the code to your script
@@ -14,16 +14,36 @@
 ;;
 ;; (debug args ...) : output results
 
-; on TinyScheme
 (define (debug obj1 . objn)
-  (write (apply stringify (cons #\: (cons obj1 objn))))
+  (echo (apply stringify (cons DELIMITER (cons obj1 objn))))
   (newline)
 )
 
-; on GIMP Script-Fu Console
-;(define (debug obj1 . objn)
-;  (gimp-message (apply stringify (cons #\Space (cons obj1 objn))))
-;)
+;;
+;; default delimiter character for debug
+
+(define DELIMITER #\Space)
+;(define DELIMITER #\:)
+;(define DELIMITER #\,)
+;(define DELIMITER #\Tab)
+;(define DELIMITER #\Newline)
+
+;;
+;; writing procedure used for debug
+
+;(define echo write) ; TineyScheme, GIMP Script-Fu Console
+(define echo display) ; TineyScheme, GIMP Script-Fu Console
+;(define echo gimp-message)  ; GIMP Script-Fu Console
+;(define echo print) ; GIMP Script-Fu Console
+
+;;
+;; writing procedure used for submit-test
+
+;(define echo-submit write) ; TineyScheme, GIMP Script-Fu Console
+;(define echo-submit display) ; TineyScheme, GIMP Script-Fu Console
+;(define echo-submit gimp-message)  ; GIMP Script-Fu Console
+;(define echo-submit print) ; GIMP Script-Fu Console
+(define echo-submit (lambda (x) (display x) (newline))) ; TinyScheme, GIMP Script-Fu Console
 
 ;;
 ;; target functions to test (example)
@@ -45,12 +65,18 @@
 
 ; stringify: object list -> string (with delimited)
 (define (stringify delimiter . objects)
+  (apply stringify-base (cons write (cons delimiter objects)))
+  ;(apply stringify-base (cons display (cons delimiter objects)))
+)
+
+; stringify: object list -> string (with delimited)
+(define (stringify-base output-procedure delimiter . objects)
   (let *
     ((port (open-output-string)))
 
     (define (write-to-string delimiter objects port)
       (unless (eq? () objects)
-        (write (car objects) port)
+        (output-procedure (car objects) port)
         (write-char delimiter port)
         (write-to-string delimiter (cdr objects) port)
       )
@@ -67,7 +93,7 @@
 (define (describe-list values . descriptions)
   (define (describe-values values descriptions)
     (if (eq? () values)
-      (car descriptions)
+      (list (car descriptions))
       (cons (car descriptions)
         (cons (car values)
           (describe-values (cdr values)
@@ -81,7 +107,7 @@
     )
   )
 
-  (stringify #\Space (describe-values values descriptions))
+  (apply stringify-base (cons display (cons #\Space (describe-values values descriptions))))
 )
 
 
@@ -101,7 +127,7 @@
     ; use equal? on GIMP Script-Fu Console
     (eqv? expected realized)
     ; on Ubutu TinyScheme 1.42 both equal? and string=? fails for string
-    ; `Error: (types.scm : 114) string-ref: index must be exact: 0
+    ; `Error: string-ref: index must be exact: 0
     ; using eqv? always tells #f for string comparison, but still works for other types
   )
 )
@@ -175,8 +201,8 @@
       (result (run-cases testCase))
       (score (calculate-score result))
     )
-    (debug (human-readable-result result))
-    (debug (human-readable-score score))
+    (echo-submit (apply stringify-base (cons display (cons DELIMITER (human-readable-result result)))))
+    (echo-submit (human-readable-score score))
   )
 )
 
@@ -186,7 +212,7 @@
   (debug "# begin self test.")
 
   (debug "# stringify")
-  (debug (stringify #\Return "a" "b" "c"))
+  (debug (stringify #\Newline "a" "b" "c"))
   (debug (stringify #\: 1 2 #f stringify "a" '(5 6 7)))
 
   (debug "# describe-list")
