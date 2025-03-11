@@ -4,9 +4,9 @@
 ; copy_visible_as_new_image.scm
 ; version: March 11, 2025
 ;
-; copy visible
-; paste as new image
-; return the new image
+; create a new image from current visible
+; ignore selection
+; return the new image and the new layer
 
 (define (copy-visible-as-new-image inImage)
 
@@ -14,9 +14,19 @@
           ; define local variables
           (imageSrc inImage) ; the image to copy from
           (imageDest) ; the image to be created
+          (layerDest) ; the drawable of the new image
+          (imageWidth (car (gimp-image-width imageSrc)))  ; the width of the image
+          (imageHeight (car (gimp-image-height imageSrc)))  ; the height of the image
+          (imageType (car (gimp-image-base-type imageSrc)))  ; the type of the image (RGB, Gray, Indexed)
+          (layerDestName "copied visible")  ; the name of the new layer
 
+          (GIMP_RGB 0)  ; RGB color space
+          (GIMP_GRAY 1)  ; Gray color space
+          (GIMP_INDEXED 2)  ; Indexed color space
+          (NO_PARENT_LAYER 0)  ; no parent layer
+          (LAYER_POSITION_BOTTOM 0)  ; top layer
           (MESSAGE-DONE "Done!")  ; message to show when done
-          (MESSAGE_ERROR_SELECTED "Copied only selected area.")
+;-;-           (MESSAGE_ERROR_SELECTED "Copied only selected area.")
     ) ;end of local variables
 
     ;;
@@ -74,32 +84,57 @@
     ;;
     ;; process start here
 
+;-;- copy visible and paste still works, but it depends SELECTION
+;-;- 
+;-;- ;    (debug "Current Image:" (car (gimp-image-get-name imageSrc)))
+;-;- 
+;-;-     ; check selection
+;-;- ;    (if (zero? (car (gimp-selection-is-empty imageSrc)))
+;-;- ;      (debug MESSAGE_ERROR_SELECTED)
+;-;- ;    )
+;-;- 
+;-;-     ; select none
+;-;-     ;(gimp-selection-clear imageSrc)
+;-;- 
+;-;-     ; copy visible
+;-;-     (gimp-edit-copy-visible imageSrc)
+;-;- 
+;-;-     ; paste as new image
+;-;-     (set! imageDest (car (gimp-edit-paste-as-new-image)))
+;-;- ;    (debug imageDest)
+;-;- 
+;-;-     ; new image is already created.
+;-;-     ; but stays invisible before opening new view
+;-;-     (gimp-display-new imageDest)
+;-;- 
+
+    ;;
+    ;; gimp-layer-new-from-visible offers direct copy of visible area
+    ;; without depending on SELECTION
+    ;; but it requires GIMP 2.6 or later
+
 ;    (debug "Current Image:" (car (gimp-image-get-name imageSrc)))
+;    (debug "Width:" imageWidth "Height:" imageHeight "Type:" imageType)
 
-    ; check selection
-;    (if (zero? (car (gimp-selection-is-empty imageSrc)))
-;      (debug MESSAGE_ERROR_SELECTED)
-;    )
+    ; create new image
+    (set! imageDest (car (gimp-image-new imageWidth imageHeight imageType)))
+;    (debug "New Image:" imageDest)
 
-    ; select none
-    ;(gimp-selection-clear imageSrc)
+    ; copy to new layer
+    (set! layerDest (car (gimp-layer-new-from-visible imageSrc imageDest layerDestName)))
+;    (debug "New Layter:" layerDest)
 
-    ; copy visible
-    (gimp-edit-copy-visible imageSrc)
+    ; add the new layer to the new image
+    (gimp-image-insert-layer imageDest layerDest NO_PARENT_LAYER LAYER_POSITION_BOTTOM)
 
-    ; paste as new image
-    (set! imageDest (car (gimp-edit-paste-as-new-image)))
-;    (debug imageDest)
-
-    ; new image is already created.
-    ; but stays invisible before opening new view
+    ; display the new image
     (gimp-display-new imageDest)
 
     ; done
 ;    (debug MESSAGE-DONE)
 
-    ; return the new image
-    (list imageDest)
+    ; return the new image, the new layer
+    (list imageDest layerDest)
   )
 )
 
