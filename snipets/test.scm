@@ -2,14 +2,16 @@
 ; copyright 2025, hanagai
 ;
 ; test.scm
-; version: March 11, 2025
+; version: March 12, 2025
 ;
 ; (load "./test.scm")
 ; or copy and paste the code to your script
 ; define your testCase and run (submit-test testCase)
 ;
-; know-bugs
+
+; (load "./string_equal.scm") on Ubuntu TinyScheme 1.42 to use (equal? )
 ; - See run-a-case definition for the bug on string comparison.
+(load "./string_equal.scm")
 
 ;;
 ;; (debug args ...) : output results
@@ -123,9 +125,10 @@
       (realized (apply (eval function) arguments))
     )
     (debug function expected arguments realized)  ; output details
-    ;(equal? expected realized)
+    (equal? expected realized)
     ; use equal? on GIMP Script-Fu Console
-    (eqv? expected realized)
+    ; (load "./string_equal.scm") on Ubuntu TinyScheme 1.42 to use (equal? )
+    ;(eqv? expected realized)
     ; on Ubutu TinyScheme 1.42 both equal? and string=? fails for string
     ; `Error: string-ref: index must be exact: 0
     ; using eqv? always tells #f for string comparison, but still works for other types
