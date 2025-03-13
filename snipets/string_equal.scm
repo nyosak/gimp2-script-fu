@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; string_equal.scm
-; version: March 12, 2025
+; version: March 13, 2025
 ;
 ; copy and paste the code to your script
 ; or load this file by (load "/path/to/string_equal.scm")
@@ -162,6 +162,46 @@
   )
 )
 
+; substring-char: string start end -> string
+; Retuns a new string between start and end in the string.
+; (substring-char "abc" 1) ; Returns "bc"
+; (substring-char "aアイbc" 2 3) ; Returns "イb"
+; Start and end are based on the character index, not the byte index.
+(define (substring-char str start . end)
+  (let
+    (
+      (port (open-output-string))
+      (bytes-list (apply sublist (cons (string->multi-byte-list str) (cons start end))))
+    )
+    (for-each
+      (lambda (bytes)
+        (for-each
+          (lambda (byte) (write-char (integer->char byte) port))
+          bytes
+        )
+      )
+      bytes-list
+    )
+    (car (cons (get-output-string port) (close-port port)))
+  )
+)
+
+; sublist: list start end -> list
+; Returns a new list between start and end of the list.
+; (sublist '(1 2 3 4 5) 2) ; Returns (3 4 5)
+; (sublist '(1 2 3 4 5) 2 3) ; Returns (3 4)
+(define (sublist list start . end)
+  (let
+    ((tail (list-tail list start)))
+    (if (null? end)
+      tail
+      (reverse
+        (list-tail (reverse tail) (- (length list) (car end) 1))
+      )
+    )
+  )
+)
+
 ; car-string: string -> string
 ; Returns the first character in the string.
 ; (car-string "abc") ; Returns "a"
@@ -176,8 +216,8 @@
 ; (cdr-string "アイ") ; Returns "イ"
 (define (cdr-string str)
   (let
-    ((byte-length-of-1st-char (string-length (car-string str))))
-    (substring str byte-length-of-1st-char (string-length str))
+    ((byte-length-of-1st-char (string-length-buitlin (car-string str))))
+    (substring-builtin str byte-length-of-1st-char (string-length-buitlin str))
   )
 )
 
@@ -311,4 +351,24 @@
     (equal-builtin? obj1 obj2)
   )
 )
+
+; string-length: string -> integer
+
+; keeps builtin available
+(if (not (defined? 'string-length-buitlin))
+  (define string-length-buitlin string-length)
+)
+
+; override
+(define string-length string-length-char)
+
+; substring: string start end -> string
+
+; keeps builtin available
+(if (not (defined? 'substring-builtin))
+  (define substring-builtin substring)
+)
+
+; override
+(define substring substring-char)
 

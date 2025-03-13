@@ -3,7 +3,7 @@
 ; copyright 2025, hanagai
 ;
 ; string_equal_testcase.scm
-; version: March 12, 2025
+; version: March 13, 2025
 ;
 ; copy and paste the code to your script
 ; or load this file by (load "/path/to/string_equal_testcase.scm")
@@ -194,6 +194,34 @@
             "イ"  ; expected return
             "アイ" ; arguments from here
             1
+          )
+
+          (
+            substring-char ; function
+            "bc"  ; expected return
+            "abc" ; arguments from here
+            1
+          )
+          (
+            substring-char ; function
+            "イb"  ; expected return
+            "aアイbc" ; arguments from here
+            2
+            3
+          )
+
+          (
+            sublist ; function
+            (3 4 5) ; expected return
+            (1 2 3 4 5) ; arguments from here
+            2
+          )
+          (
+            sublist ; function
+            (3 4) ; expected return
+            (1 2 3 4 5) ; arguments from here
+            2
+            3
           )
 
           (
@@ -530,6 +558,13 @@
             "a" ; arguments from here
             "b"
           )
+
+          (
+            string-length ; function
+            3  ; expected return
+            "aあA" ; arguments from here
+          )
+
 
         )
       )
