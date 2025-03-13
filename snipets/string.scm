@@ -3,7 +3,7 @@
 ; copyright 2025, hanagai
 ;
 ; string.scm
-; version: March 13, 2025; 17:20 JST
+; version: March 14, 2025
 ;
 ; copy and paste the code to your script
 ; or load this file by (load "/path/to/string.scm")
@@ -19,12 +19,12 @@
   (define DIR-SEPARATOR "/")
 )
 
-; is-blank?: string -> boolean
+; string-blank?: string -> boolean
 ; string is blank, or not
 ; Returns #t if the string is blank, otherwise #f.
-; (is-blank? "") ; Returns #t
-; (is-blank? "not blank") ; Returns #f
-(define (is-blank? str)
+; (string-blank? "") ; Returns #t
+; (string-blank? "not blank") ; Returns #f
+(define (string-blank? str)
   (if (zero? (string-length str)) #t #f))
 
 ; string-starts-with?: string string -> boolean
@@ -148,7 +148,7 @@
           (rest (cdr paths))
         )
         (join-file-path-relatives
-          (if (is-blank? this_segment)
+          (if (string-blank? this_segment)
             joined
             (string-append joined DIR-SEPARATOR this_segment)
           )
@@ -172,12 +172,12 @@
         '(
 
           (
-            is-blank? ; function
+            string-blank? ; function
             #f  ; expected return
             "not blank" ; arguments from here
           )
           (
-            is-blank? ; function
+            string-blank? ; function
             #t  ; expected return
             "" ; arguments from here
           )
