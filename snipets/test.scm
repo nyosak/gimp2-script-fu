@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; test.scm
-; version: March 12, 2025
+; version: March 13, 2025
 ;
 ; (load "./test.scm")
 ; or copy and paste the code to your script
@@ -148,7 +148,7 @@
   (map
     (lambda (x)
       (if x
-          "PASS"
+          "pass"
           "FAIL"))
     result
   )
@@ -195,6 +195,53 @@
   (describe-list score "" "failed." "passed.  Of total" "tests.")
 )
 
+; list-select: select item that mets condition from list
+; (list-select '(1 2 3) (lambda (i) (eqv? 2 i)))
+(define (list-select list func)
+  (let loop ((i 0))
+    (if (eqv? i (length list))
+      ()
+      (let*
+        (
+          (item (list-ref list i))
+          (i2 (+ 1 i))
+          (select? ((eval func) item))
+        )
+        (if select?
+          (cons item (list-select (list-tail list i2) func))
+          (loop i2)
+        )
+      )
+    )
+  )
+)
+
+; list-select-by-list: select item from list by the 2nd list,
+; that matches 3rd value.
+; (list-select-by-list '(1 2 3) '(#f #t #f) #t
+(define (list-select-by-list list boolean-list value)
+  (let loop ((i 0))
+    (if (eqv? i (length list))
+      ()
+      (let*
+        (
+          (item (list-ref list i))
+          (i2 (+ 1 i))
+          (select? (eqv? value (list-ref boolean-list i)))
+        )
+        (if select?
+          (cons item (list-select-by-list
+              (list-tail list i2)
+              (list-tail boolean-list i2)
+              value
+            )
+          )
+          (loop i2)
+        )
+      )
+    )
+  )
+)
 
 ; submit-test: run the test case and output the result
 ; (submit-test '((function expected arguments ...) ...))
@@ -206,6 +253,18 @@
     )
     (echo-submit (apply stringify-base (cons display (cons DELIMITER (human-readable-result result)))))
     (echo-submit (human-readable-score score))
+
+    ; show additional information for failed tests
+    (if #t  ; change this do enable/disable
+      (if (zero? (car score))
+        (echo-submit "Very good!")
+        (begin
+          (echo-submit "")
+          (echo-submit "Failed tests")
+          (echo-submit (apply stringify-base (cons display (cons #\Newline (list-select-by-list testCase result #f)))))
+        )
+      )
+    )
   )
 )
 
@@ -289,6 +348,34 @@
             example-is-blank? ; function
             #t  ; expected return
             "" ; arguments from here
+          )
+
+          (
+            list-select ; function
+            (1 2 3)  ; expected return
+            (0 1 2 3 4 5)  ; argumetns from here
+            (lambda (i) (and (< i 4) (> i 0)))
+          )
+          (
+            list-select ; function
+            ()  ; expected return
+            (0 1 2 3 4 5)  ; argumetns from here
+            string?
+          )
+
+          (
+            list-select-by-list ; function
+            (2 3)  ; expected return
+            (0 1 2 3 4 5)  ; argumetns from here
+            (#f #f #t #t #f #f)
+            #t
+          )
+          (
+            list-select-by-list ; function
+            (0 1 4 5)  ; expected return
+            (0 1 2 3 4 5)  ; argumetns from here
+            (#f #f #t #t #f #f)
+            #f
           )
 
         )
