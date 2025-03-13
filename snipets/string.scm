@@ -3,7 +3,7 @@
 ; copyright 2025, hanagai
 ;
 ; string.scm
-; version: March 13, 2025
+; version: March 13, 2025; 17:20 JST
 ;
 ; copy and paste the code to your script
 ; or load this file by (load "/path/to/string.scm")
@@ -13,6 +13,11 @@
 ;   string=? substring string-length
 ; Load string_equal.scm at TinyScheme.
 (load "./string_equal.scm")
+
+; DIR-SEPARATOR is pre-defined at GIMP
+(if (not (defined? 'DIR-SEPARATOR))
+  (define DIR-SEPARATOR "/")
+)
 
 ; is-blank?: string -> boolean
 ; string is blank, or not
@@ -89,12 +94,6 @@
     (rtrim (substring str 0 (- (string-length str) (string-length remove) 1)) remove)
     str
   )
-)
-
-
-; DIR-SEPARATOR is pre-defined at GIMP
-(if (not (defined? 'DIR-SEPARATOR))
-  (define DIR-SEPARATOR "/")
 )
 
 ; trim-both-separators: string -> string
