@@ -2,11 +2,11 @@
 ; copyright 2025, hanagai
 ;
 ; copy_visible_as_new_image.scm
-; version: March 11, 2025
+; version: March 14, 2025
 ;
 ; create a new image from current visible
 ; ignore selection
-; return the new image and the new layer
+; return the new image, the new layer and the new display
 
 (define (copy-visible-as-new-image inImage)
 
@@ -19,10 +19,11 @@
           (imageHeight (car (gimp-image-height imageSrc)))  ; the height of the image
           (imageType (car (gimp-image-base-type imageSrc)))  ; the type of the image (RGB, Gray, Indexed)
           (layerDestName "copied visible")  ; the name of the new layer
+          (newDisplay) ; the display of new image
 
-          (GIMP_RGB 0)  ; RGB color space
-          (GIMP_GRAY 1)  ; Gray color space
-          (GIMP_INDEXED 2)  ; Indexed color space
+          ;(GIMP_RGB 0)  ; RGB color space
+          ;(GIMP_GRAY 1)  ; Gray color space
+          ;(GIMP_INDEXED 2)  ; Indexed color space
           (NO_PARENT_LAYER 0)  ; no parent layer
           (LAYER_POSITION_BOTTOM 0)  ; top layer
           (MESSAGE-DONE "Done!")  ; message to show when done
@@ -128,13 +129,14 @@
     (gimp-image-insert-layer imageDest layerDest NO_PARENT_LAYER LAYER_POSITION_BOTTOM)
 
     ; display the new image
-    (gimp-display-new imageDest)
+    (set! newDisplay (car (gimp-display-new imageDest)))
 
     ; done
 ;    (debug MESSAGE-DONE)
 
-    ; return the new image, the new layer
-    (list imageDest layerDest)
+    ; return the new image, the new layer and the new display
+    ; newDisplay will be required to delete this image later
+    (list imageDest layerDest newDisplay)
   )
 )
 
