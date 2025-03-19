@@ -5,7 +5,7 @@ generates a case list for android icon creator
 copyright 2025, hanagai
 
 android_icon_specification.py
-version: March 19, 2025
+version: March 19, 2025; 17:40 JST
 
 bash script to create subfolders
 case list for GIMP Script-Fu
@@ -69,31 +69,94 @@ arguments:
 """
 
   overview = r"""
-```mermaid
-TODO: wirte overview
 
-Document
+%%{init:
+	{
+		"theme": "forest",
+		"logLevel": 2,
+		"flowchart": { "curve": "linear" }
+	}
+}%%
 
-HierarchyDefault
-Hierarchy
-Iterator
-Instruction
+flowchart TB
 
-Collector
-TreeCollector
-LeafCollector
+	Document -- define args --> main
 
-RoomMixer
-FloorMixer
-TreeMaker
+	HierarchyDefault -- initialize --> Hierarchy
+	Instruction -- update --> Hierarchy
+	Iterator -- iterate --> Instruction
 
-Executor
+	Collector -- subclass --> TreeCollector
+	Collector -- subclass --> LeafCollector
 
-main()
+	Hierarchy -- directory --> TreeMaker
+	Iterator -- "dangeon map" --> TreeMaker
+	TreeMaker -- deeper --> FloorMixer -- deeper --> RoomMixer
 
-Test
+	FloorMixer -- gather ----> LeafCollector
+	FloorMixer -- gather ----> TreeCollector
+	RoomMixer -- gather ----> LeafCollector
+	RoomMixer -- gather ----> TreeCollector
 
-```
+	TreeCollector -- tree --> TreeMaker
+	LeafCollector -- leaf --> FloorMixer
+	LeafCollector -- leaf --> RoomMixer
+
+	main("main()") -- run --> Executor
+	Executor -- run --> TreeMaker
+
+	TreeMaker -- create --> the_tree
+	the_tree -- transform --> bash
+	the_tree -- transform --> scheme
+
+	Executor --- the_tree[(the tree)]
+	Executor --- bash[(bash mkdir)]
+	Executor --- scheme[(scheme list)]
+
+	command([command line]) ----> main
+	bash -- stdout --> output([output result])
+	scheme -- stdout --> output
+
+	Test
+
+subgraph documents
+	Document
+end
+
+subgraph hierarchies
+	HierarchyDefault
+	Hierarchy
+	Iterator
+	Instruction
+end
+
+subgraph collectors
+	Collector
+	TreeCollector
+	LeafCollector
+end
+
+subgraph tree
+	RoomMixer
+	FloorMixer
+	TreeMaker
+end
+
+subgraph runner
+	Executor
+	main
+	the_tree
+	bash
+	scheme
+end
+
+subgraph tests
+	Test
+end
+
+linkStyle default color:#936, stroke:#f69, stroke-width:2px;
+classDef default fill:#fcc, stroke:#345, stroke-width:3px, font-size:14pt;
+
 """
 
   origin = r"""
@@ -1064,7 +1127,7 @@ class Test:
     r"""
     show all documents
     """
-    self.show_overview()
+    self.show_overview_with_mermaid_html()
     self.show_origin()
 
   def show_usage(self):
@@ -1085,6 +1148,30 @@ class Test:
     """
     print(Document.overview)
 
+  def show_overview_with_mermaid_html(self):
+    r"""
+    include html to call mermaid
+    """
+    params = "{ startOnLoad: true }"
+    print(
+      f"""
+<html>
+  <body>
+    <h1>overview</h1>
+    <pre class="mermaid">
+
+{Document.overview}
+
+    </pre>
+
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({params});
+    </script>
+  </body>
+</html>
+      """
+    )
 
   def test_hierarcy_default(self):
     r"""
@@ -1225,6 +1312,7 @@ if __name__ == '__main__':
   #Test().show_usage()
   #Test().show_origin()
   #Test().show_overview()
+  #Test().show_overview_with_mermaid_html()
 
   #Test().test_hierarcy_default()
   #Test().test_hierarcy()
