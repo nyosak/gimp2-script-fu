@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; test.scm
-; version: March 13, 2025
+; version: March 23, 2025
 ;
 ; (load "./test.scm")
 ; or copy and paste the code to your script
@@ -14,11 +14,36 @@
 (load "./string_equal.scm")
 
 ;;
+;; output to file
+
+;(define port-log-1 (open-output-file "/home/kuro/tmp/log.txt"))
+;(close-output-port port-log-1)
+
+;;
+;; (show-info ... args) : outupt multi-line results
+
+(define (show-info . objs)
+  (if (not (eq? () objs))
+    (let
+      ;((port port-log-1))
+      ((port (current-output-port)))
+      (echo (apply stringify (list DELIMITER (car objs))) port)
+      (newline port)
+      (apply show-info (cdr objs))
+    )
+  )
+)
+
+;;
 ;; (debug args ...) : output results
 
 (define (debug obj1 . objn)
-  (echo (apply stringify (cons DELIMITER (cons obj1 objn))))
-  (newline)
+  (let
+    ;((port port-log-1))
+    ((port (current-output-port)))
+    (echo (apply stringify (cons DELIMITER (cons obj1 objn))) port)
+    (newline port)
+  )
 )
 
 ;;
@@ -273,6 +298,9 @@
 (define (test-myself)
   (debug "# begin self test.")
 
+  (debug "# show-info")
+  (show-info "show-info begin" 1 2 3 '(4 5 6) "show-info end")
+
   (debug "# stringify")
   (debug (stringify #\Newline "a" "b" "c"))
   (debug (stringify #\: 1 2 #f stringify "a" '(5 6 7)))
@@ -334,7 +362,7 @@
 
 ; example test case
 (define (example-submit-test)
-  (let *
+  (let*
     (
       (testCase
         '(
