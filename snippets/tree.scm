@@ -3,7 +3,7 @@
 ; copyright 2025, hanagai
 ;
 ; tree.scm
-; version: March 23, 2025
+; version: March 23, 2025; 15:25 JST
 ;
 ; copy and paste the code to your script
 ; or load this file by (load "/path/to/tree.scm")
@@ -377,6 +377,7 @@
       (show-info node opts)
 
       (set! return-value (example1 node opts))
+      (show-info "return-value" return-value)
       (discard-image new-display)
 
       (show-info "INFO: working image was discarded")
@@ -437,10 +438,22 @@
       (show-info "INFO: modify image to fit specified build and shape")
       (list
         (if (attribute-has-key? attr "build")
-          (handle-build image (attribute-search-key attr "build"))
+          (let
+            ((value (attribute-search-key attr "build")))
+            (list
+              value
+              (handle-build image value)
+            )
+          )
         )
         (if (attribute-has-key? attr "shape")
-          (handle-shape image (attribute-search-key attr "shape"))
+          (let
+            ((value (attribute-search-key attr "shape")))
+            (list
+              value
+              (handle-shape image value)
+            )
+          )
         )
       )
     )
@@ -456,8 +469,11 @@
       (show-info "INFO: set size to local variable")
       (list
         (if (attribute-has-key? attr "size")
-          (set! size (attribute-search-key attr "size"))
-          (handle-size image size)
+          (list
+            ; `size` here is defined at parent scope
+            (set! size (attribute-search-key attr "size"))
+            (handle-size image size)
+          )
         )
       )
     )
@@ -639,11 +655,11 @@
   (let*
     (
 
-      (hierarchy 
+      (hierarchy
         '("user_home" "studio_home" "project" "version" "src" "build" "res" "mipmap" "icon_name")
       )
 
-      (arguments 
+      (arguments
         '(#f #f "project" "version" #f #f #f #f #f)
       )
 
@@ -991,7 +1007,31 @@
           ; )
           (
             execute-example1 ; function
-            "something" ; expected return
+            (
+              (
+                (
+                  (
+                    "main"
+                    "INFO: change layer visibility by build"
+                  )
+                  (
+                    "square"
+                    "INFO: change layer visibility by shape"
+                  )
+                )
+                (
+                  (
+                    (
+                      (
+                        96
+                        "INFO: nothing here for GIMP"
+                      )
+                    )
+                    "INFO: scale image and export as webp"
+                  )
+                )
+              )
+            ) ; expected return
             "image" ; arguments from here
             "new-project"
             "new-version"
