@@ -74,7 +74,19 @@
         )
       )
 
-      (a 3)
+      ; parameters
+      (image inImage)     ; current image
+      (project inProject) ; project name (required)
+      (version inVersion) ; version name (required)
+
+      ; variables
+      (return-value #f)  ; store return value
+      (parameter-is-missing (or (zero? (string-length project)) (zero? (string-length version)))) ; project or version is missing
+
+      ; constants
+      (LOG-FILE "/home/kuro/tmp/log.txt") ; to write info
+      (DISCARD-FILE "/dev/null") ; to discard
+      (ERROR-PARAMETER-MISSING "ERROR: Both of project and version are required.")  ; message to show when project or version are missing
       (MESSAGE-DONE "Done!")  ; message to show when done
     )
 
@@ -84,7 +96,7 @@
     ; from test.scm
 
     ; TODO only for debug
-    (load "../snippets/string_equal.scm")
+    ;(load "../snippets/string_equal.scm")
 
     ;;
     ;; output to file
@@ -114,8 +126,10 @@
       (let
         ;((port port-log-1))
         ((port (current-output-port)))
-        (echo (apply stringify (cons DELIMITER (cons obj1 objn))) port)
-        (newline port)
+        ;(echo (apply stringify (cons DELIMITER (cons obj1 objn))) port)
+        ;(newline port)
+        (echo-d (apply stringify (cons DELIMITER (cons obj1 objn))))
+        (newline)
       )
     )
 
@@ -133,7 +147,7 @@
 
     ;(define echo write) ; TineyScheme, GIMP Script-Fu Console
     (define echo display) ; TineyScheme, GIMP Script-Fu Console
-    ;(define echo gimp-message)  ; GIMP Script-Fu Console
+    (define echo-d gimp-message)  ; GIMP Script-Fu Console
     ;(define echo print) ; GIMP Script-Fu Console
 
     ; stringify: object list -> string (with delimited)
@@ -458,7 +472,7 @@
         (case depth
           ((1) (func-a-1 node opts))
           ((2) (func-a-2 node opts))
-          (else '("Too deep for a human"))
+          (else "ERROR: Too deep for a human")
         )
       )
     )
@@ -545,14 +559,24 @@
     ; gimp
 
     (define (duplicate-image image)
-      (show-info "INFO: duplicate current image")
+      (show-info "INFO: duplicate current image" image)
       (show-info "TODO: handle GIMP")
-      (list "new-image" "new-display")  ; TODO: return image info
+      (let
+        (
+          (new-image 0) ; set new image
+          (new-display 0) ; st new display
+        )
+        (set! new-image (car (gimp-image-duplicate image)))
+        (show-info new-image)
+        (set! new-display (car (gimp-display-new new-image)))
+        (show-info new-display)
+        (list new-image new-display)
+      )
     )
 
     (define (discard-image display)
-      (show-info "INFO: delete display and image")
-      (show-info "TODO: handle GIMP")
+      (show-info "GIMP: delete display and image" display)
+      (gimp-display-delete display)
       "INFO: delete display and image"
     )
 
@@ -722,45 +746,56 @@
     ;; process start here
 
     ;; output to file BEGIN
-    ;(define port-log-1 (open-output-file "/home/kuro/tmp/log.txt"))
-    (define port-log-1 (current-output-port))
+    (define port-log-1 (open-output-file LOG-FILE))
+    ;(define port-log-1 (current-output-port))
+
+    (debug "parameters: " image project version)
+
+    (if parameter-is-missing
+      (begin
+        (show-info ERROR-PARAMETER-MISSING)
+        (debug ERROR-PARAMETER-MISSING)
+      )
+      (begin
+        (set! return-value
+          (execute-example1 image project version arguments hierarchy icon-list)
+        )
+        ; done
+        (debug MESSAGE-DONE)
+      )
+    )
 
 
 ;    (debug "Current Image:" (car (gimp-image-get-name imageSrc)))
 
 
-    (execute-example1 0 "special_project" "special_version" arguments hierarchy icon-list)
 
-
-    ; done
-    (debug MESSAGE-DONE)
 
     ;; output to file END
-    ;(close-output-port port-log-1)
+    (close-output-port port-log-1)
 
-    ; return the file full path, width and height
-    ;(list fileFullPath newWidth newHeight)
+    return-value
   )
 
 )
 
 ; TODO only for debug
-(export-android-icons 0 "new-project" "new-version")
+;(export-android-icons 0 "new-project" "new-version")
 
-; (script-fu-register
-;     _"export-android-icons"                ;function name
-;     _"Export Android app icons..."        ;menu label
-;     "Works on a copy of current image. \
-;       Iterates build shape and size in all combinations. \
-;       Export as webp file. \
-;       Discard the working copy."                  ;description
-;     "hanagai"                             ;author
-;     "copyright 2025, hanagai"             ;copyright notice
-;     "March 23, 2025"                      ;date created
-;     "*"                                   ;image type that the script works on
-;     SF-IMAGE       "Image"            0   ;an image variable
-;     SF-STRING     _"Project"          ""  ;project name
-;     SF-STRING     _"Version"          ""  ;project version
-; )
-;(script-fu-menu-register "export-android-icons" "<Image>/File/x Export")
+(script-fu-register
+    _"export-android-icons"                ;function name
+    _"Export Android app icons..."        ;menu label
+    "Works on a copy of current image. \
+      Iterates build shape and size in all combinations. \
+      Export as webp file. \
+      Discard the working copy."                  ;description
+    "hanagai"                             ;author
+    "copyright 2025, hanagai"             ;copyright notice
+    "March 23, 2025"                      ;date created
+    "*"                                   ;image type that the script works on
+    SF-IMAGE       "Image"            0   ;an image variable
+    SF-STRING     _"Project"          ""  ;project name
+    SF-STRING     _"Version"          ""  ;project version
+)
+(script-fu-menu-register "export-android-icons" "<Image>/File/x Export")
 
