@@ -5,7 +5,7 @@ generates a case list for android icon creator
 copyright 2025, hanagai
 
 android_icon_specification.py
-version: March 19, 2025; 17:40 JST
+version: March 24, 2025; 17:40 JST
 
 bash script to create subfolders
 case list for GIMP Script-Fu
@@ -328,7 +328,7 @@ class Hierarchy:
     for k in intersection.keys():
       self._bag[k] = intersection[k]
     r"""
-    accept only keys defined in HierarcyDefault
+    accept only keys defined in HierarchyDefault
     """
 
   def __str__(self):
@@ -346,7 +346,7 @@ class Hierarchy:
     sub_keys = [k for k in the_dict.keys() if not k.startswith("_") and k != "instruction"]
     self._bag = {k: the_dict[k] for k in sub_keys}
     r"""
-    initialize property _bag with HierarcyDefault
+    initialize property _bag with HierarchyDefault
     instruction should not be set at initialization
     """
 
@@ -386,7 +386,7 @@ class Iterator:
   r"""
   list to iterate
 
-  This class have iterating properties of Hierarcy.
+  This class have iterating properties of Hierarchy.
   """
 
   key_list = ("build", "size", "shape")
@@ -454,7 +454,7 @@ class Iterator:
       case _:
         return ()
     r"""
-    convert Iterator style key-value into Hierarcy style.
+    convert Iterator style key-value into Hierarchy style.
     For Instruction
     """
 
@@ -547,8 +547,8 @@ class Iterator:
 
 class Instruction:
   r"""
-  Instruction instance is a single case of iterating properties of Hierarcy.
-  Properties are converted to fit Hierarcy.
+  Instruction instance is a single case of iterating properties of Hierarchy.
+  Properties are converted to fit Hierarchy.
   """
 
   def __init__(self):
@@ -575,7 +575,7 @@ class Instruction:
         self.__setattr__(*converted)
     r"""
     keys and values in kwargs is Iterator style, (build, size, shape).
-    Convert them into Hierarcy style, (build, mipmap, icon_name).
+    Convert them into Hierarchy style, (build, mipmap, icon_name).
     """
 
 
@@ -1175,7 +1175,7 @@ class Test:
 
   def test_hierarcy_default(self):
     r"""
-    test HierarcyDefault
+    test HierarchyDefault
     """
 
     print(HierarchyDefault)
@@ -1196,7 +1196,7 @@ class Test:
 
   def test_hierarcy(self):
     r"""
-    test Hierarcy
+    test Hierarchy
     """
 
     print(Hierarchy)
