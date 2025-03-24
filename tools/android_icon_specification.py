@@ -116,6 +116,7 @@ flowchart TB
   command([command line]) ----> main
   bash -- stdout --> output([output result])
   scheme -- stdout --> output
+  customize([customize]) ----> HierarchyDefault
 
   Test
 
@@ -584,7 +585,6 @@ collector helps gathering items from deeply nested structure
 """
 
 class Collector:
-  pass
   r"""
   iterable list with customized push, delete, get
   base class of Collector family
@@ -781,7 +781,6 @@ class FloorMixer(Collector):
 
 
 class TreeMaker:
-  pass
   r"""
   organize collections and mixers to make tree
   this will be called first
