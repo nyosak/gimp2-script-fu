@@ -71,87 +71,87 @@ arguments:
   overview = r"""
 
 %%{init:
-	{
-		"theme": "forest",
-		"logLevel": 2,
-		"flowchart": { "curve": "linear" }
-	}
+  {
+    "theme": "forest",
+    "logLevel": 2,
+    "flowchart": { "curve": "linear" }
+  }
 }%%
 
 flowchart TB
 
-	Document -- define args --> main
+  Document -- define args --> main
 
-	HierarchyDefault -- initialize --> Hierarchy
-	Instruction -- update --> Hierarchy
-	Iterator -- iterate --> Instruction
+  HierarchyDefault -- initialize --> Hierarchy
+  Instruction -- update --> Hierarchy
+  Iterator -- iterate --> Instruction
 
-	Collector -- subclass --> TreeCollector
-	Collector -- subclass --> LeafCollector
+  Collector -- subclass --> TreeCollector
+  Collector -- subclass --> LeafCollector
 
-	Hierarchy -- directory --> TreeMaker
-	Iterator -- "dangeon map" --> TreeMaker
-	TreeMaker -- deeper --> FloorMixer -- deeper --> RoomMixer
+  Hierarchy -- directory --> TreeMaker
+  Iterator -- "dangeon map" --> TreeMaker
+  TreeMaker -- deeper --> FloorMixer -- deeper --> RoomMixer
 
-	FloorMixer -- gather ----> LeafCollector
-	FloorMixer -- gather ----> TreeCollector
-	RoomMixer -- gather ----> LeafCollector
-	RoomMixer -- gather ----> TreeCollector
+  FloorMixer -- gather ----> LeafCollector
+  FloorMixer -- gather ----> TreeCollector
+  RoomMixer -- gather ----> LeafCollector
+  RoomMixer -- gather ----> TreeCollector
 
-	TreeCollector -- tree --> TreeMaker
-	LeafCollector -- leaf --> FloorMixer
-	LeafCollector -- leaf --> RoomMixer
+  TreeCollector -- tree --> TreeMaker
+  LeafCollector -- leaf --> FloorMixer
+  LeafCollector -- leaf --> RoomMixer
 
-	main("main()") -- run --> Executor
-	Executor -- run --> TreeMaker
+  main("main()") -- run --> Executor
+  Executor -- run --> TreeMaker
 
-	TreeMaker -- create --> the_tree
-	the_tree -- transform --> bash
-	the_tree -- transform --> scheme
+  TreeMaker -- create --> the_tree
+  the_tree -- transform --> bash
+  the_tree -- transform --> scheme
 
-	Executor --- the_tree[(the tree)]
-	Executor --- bash[(bash mkdir)]
-	Executor --- scheme[(scheme list)]
+  Executor --- the_tree[(the tree)]
+  Executor --- bash[(bash mkdir)]
+  Executor --- scheme[(scheme list)]
 
-	command([command line]) ----> main
-	bash -- stdout --> output([output result])
-	scheme -- stdout --> output
+  command([command line]) ----> main
+  bash -- stdout --> output([output result])
+  scheme -- stdout --> output
 
-	Test
+  Test
 
 subgraph documents
-	Document
+  Document
 end
 
 subgraph hierarchies
-	HierarchyDefault
-	Hierarchy
-	Iterator
-	Instruction
+  HierarchyDefault
+  Hierarchy
+  Iterator
+  Instruction
 end
 
 subgraph collectors
-	Collector
-	TreeCollector
-	LeafCollector
+  Collector
+  TreeCollector
+  LeafCollector
 end
 
 subgraph tree
-	RoomMixer
-	FloorMixer
-	TreeMaker
+  RoomMixer
+  FloorMixer
+  TreeMaker
 end
 
 subgraph runner
-	Executor
-	main
-	the_tree
-	bash
-	scheme
+  Executor
+  main
+  the_tree
+  bash
+  scheme
 end
 
 subgraph tests
-	Test
+  Test
 end
 
 linkStyle default color:#936, stroke:#f69, stroke-width:2px;
