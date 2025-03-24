@@ -45,6 +45,11 @@
     (newline port)
   )
 )
+; gimp-message does not accept port
+;(define (debug obj1 . objn)
+;  (echo (apply stringify (cons DELIMITER (cons obj1 objn))))
+;  (newline)
+;)
 
 ;;
 ;; default delimiter character for debug
