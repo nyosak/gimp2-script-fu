@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; export_copy_as_webp.scm
-; version: March 14, 2025
+; version: March 24, 2025
 ;
 ; copy visible as new image
 ; scale image if specified
@@ -302,14 +302,14 @@
         0 ; Toggle saving exif data (0/1)
         0 ; Toggle saving iptc data (0/1)
         0 ; Toggle saving xmp data (0/1)
-        0 ; Toggle saving thumbnail (0/1)
+        ;param for file-webp-save2 ;0 ; Toggle saving thumbnail (0/1)
         0 ; Delay to use when timestamps are not available or forced
         0 ; Force delay on all frames
       )
     )
 ;    (debug "webp-save-procedure-args:" webp-save-procedure-args)
 
-    (set! fileSaveResult (apply file-webp-save2 webp-save-procedure-args))
+    (set! fileSaveResult (apply file-webp-save webp-save-procedure-args))
 ;    (debug "fileSaveResult:" fileSaveResult)
 
     ; discard the copy

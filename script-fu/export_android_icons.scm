@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; export_android_icons.scm
-; version: March 23, 2025
+; version: March 24, 2025
 ;
 ; use tools/android_icon_specification.py to customize output.
 ;
@@ -23,6 +23,15 @@
 
       (arguments
         '(#f #f "project" "version" #f #f #f #f #f)
+      )
+
+
+      (iterator-build
+        '("main" "debug" "release")
+      )
+
+      (iterator-shape
+        '("square" "round")
       )
 
       (icon-list
@@ -95,15 +104,6 @@
 
     ; from test.scm
 
-    ; TODO only for debug
-    ;(load "../snippets/string_equal.scm")
-
-    ;;
-    ;; output to file
-
-    ;(define port-log-1 (open-output-file "/home/kuro/tmp/log.txt"))
-    ;(close-output-port port-log-1)
-
     ;;
     ;; (show-info ... args) : outupt multi-line results
 
@@ -147,6 +147,7 @@
 
     ;(define echo write) ; TineyScheme, GIMP Script-Fu Console
     (define echo display) ; TineyScheme, GIMP Script-Fu Console
+    ;(define echo-d display) ; TineyScheme, GIMP Script-Fu Console
     (define echo-d gimp-message)  ; GIMP Script-Fu Console
     ;(define echo print) ; GIMP Script-Fu Console
 
@@ -537,11 +538,12 @@
           (version (get-version opts))
           (arguments (get-arguments opts))
           (hierarchy (get-hierarchy opts))
-          (new-hierarchy (merge-arguments hierarchy arguments project version))
+          (dirs (get-node-body node))
+          (new-dirs (merge-arguments dirs arguments project version))
         )
         (show-info "INFO: reflect arguments (project, version) into hierarchy")
-        (show-info hierarchy arguments project version new-hierarchy)
-        (export-scaled-webp image size new-hierarchy)
+        (show-info hierarchy arguments project version new-dirs)
+        (export-scaled-webp image size new-dirs)
       )
     )
 
@@ -559,17 +561,15 @@
     ; gimp
 
     (define (duplicate-image image)
-      (show-info "INFO: duplicate current image" image)
-      (show-info "TODO: handle GIMP")
+      (show-info "GIMP: duplicate current image" image)
       (let
         (
           (new-image 0) ; set new image
           (new-display 0) ; st new display
         )
         (set! new-image (car (gimp-image-duplicate image)))
-        (show-info new-image)
         (set! new-display (car (gimp-display-new new-image)))
-        (show-info new-display)
+        (show-info "INFO: image duplicated:" new-image new-display)
         (list new-image new-display)
       )
     )
@@ -582,31 +582,149 @@
 
     (define (handle-build image build)
       (show-info "--- handle-build ---" image build)
-      (show-info "INFO: change layer visibility by build")
-      (show-info "TODO: handle GIMP")
-      (show-info "TODO: remember flush display")
+      (show-info "GIMP: change layer visibility by build")
+      (make-layers-invisible image iterator-build)
+      (make-layers-visible image build)
+      (gimp-displays-flush)
       "INFO: change layer visibility by build"
     )
 
     (define (handle-shape image shape)
       (show-info "--- handle-shape ---" image shape)
-      (show-info "INFO: change layer visibility by shape")
-      (show-info "TODO: handle GIMP")
-      (show-info "TODO: remember flush display")
+      (show-info "GIMP: change layer visibility by shape")
+      (make-layers-invisible image iterator-shape)
+      (make-layers-visible image shape)
+      (gimp-displays-flush)
       "INFO: change layer visibility by shape"
     )
 
-    (define (handle-size image arg_size)
-      (show-info "--- handle-size ---" image arg_size)
+    (define (handle-size image arg-size)
+      (show-info "--- handle-size ---" image arg-size)
       (show-info "INFO: nothing here for GIMP")
       "INFO: nothing here for GIMP"
     )
 
-    (define (export-scaled-webp image arg_size hierarchy)
-      (show-info "--- export-scaled-webp ---" image arg_size hierarchy)
-      (show-info "INFO: scale image and export as webp")
-      (show-info "TODO: handle GIMP")
+    (define (export-scaled-webp image arg-size arg-hierarchy)
+      (show-info "--- export-scaled-webp ---" image arg-size arg-hierarchy)
+      (show-info "GIMP: scale image and export as webp")
+      (let
+        (
+          (arguments (make-argument-export image arg-size arg-hierarchy))
+          (return-value ()) ; set return value of webp creation later
+        )
+        (show-info "INFO: arguments for export-copy-as-webp" arguments)
+        (set! return-value (apply export-copy-as-webp arguments))
+        (show-info (apply text-webp-done return-value))
+      )
+      (show-info (text-wall "an icon finished."))
       "INFO: scale image and export as webp"
+    )
+
+    (define (valid-layer? item)
+      (positive? item)
+    )
+
+    (define (text-visibility-is-now layer-name layer visibility)
+      (string-append
+        "INFO: layer `" layer-name "`"
+        " (" (number->string layer) ") "
+        "is now "
+        (if (eqv? TRUE visibility) "visible" "invisible")
+        "."
+      )
+    )
+
+    (define (text-layer-not-found layer-name visibility)
+      (string-append
+        "INFO: layer `" layer-name "`"
+        " not found to be "
+        (if (eqv? TRUE visibility) "visible" "invisible")
+        "."
+      )
+    )
+
+    (define (text-webp-done path width height)
+      (string-append
+        "INFO: saved. `" path "`"
+        " (" (number->string width) "x" (number->string height) ") "
+      )
+    )
+
+    (define (text-wall message)
+      (string-append
+        "----:"
+        (string-repeat 32 "-" " ")
+        " " message
+        (string-repeat 32 "-" " ")
+      )
+    )
+
+    (define (string-repeat repeat str str-given)
+      (if (positive? repeat)
+        (string-repeat (- repeat 1) str (string-append str-given str))
+        str-given
+      )
+    )
+
+    (define (set-layer-visibility image layer-name visibility)
+      (let
+        (
+          (layer (car (gimp-image-get-layer-by-name image layer-name)))
+        )
+        (if (valid-layer? layer)
+          ; when layer found, make it visible.
+          ; othewirse, do nothing. just show info.
+          (begin
+            (gimp-item-set-visible layer visibility)
+            (show-info (text-visibility-is-now
+              layer-name
+              layer
+              (car (gimp-item-get-visible layer))
+            ))
+          )
+          (show-info (text-layer-not-found layer-name visibility))
+        )
+      )
+    )
+
+    ; expects a name list as 2nd argument
+    (define (make-layers-invisible image layers)
+      (if (positive? (length layers))
+        (let
+          ((layer-name (car layers)))
+          (set-layer-visibility image layer-name FALSE)
+          (make-layers-invisible image (cdr layers))
+        )
+      )
+    )
+
+    ; expects multiple arguments as layer names
+    (define (make-layers-visible image . layers)
+      (if (positive? (length layers))
+        (let
+          ((layer-name (car layers)))
+          (set-layer-visibility image layer-name TRUE)
+          (apply make-layers-visible (cons image (cdr layers)))
+        )
+      )
+    )
+
+    (define (list-get-last list)
+      (car (last-pair list))
+    )
+
+    (define (list-remove-last list)
+      (reverse (cdr (reverse list)))
+    )
+
+    (define (make-argument-export image arg-size hierarchy)
+      (let*
+        (
+          (file-name (list-get-last hierarchy))
+          (dirs (list-remove-last hierarchy))
+        )
+        (cons image (cons arg-size (cons file-name dirs)))
+      )
     )
 
     ; helper
@@ -749,7 +867,7 @@
     (define port-log-1 (open-output-file LOG-FILE))
     ;(define port-log-1 (current-output-port))
 
-    (debug "parameters: " image project version)
+;    (debug "parameters: " image project version)
 
     (if parameter-is-missing
       (begin
@@ -765,12 +883,6 @@
       )
     )
 
-
-;    (debug "Current Image:" (car (gimp-image-get-name imageSrc)))
-
-
-
-
     ;; output to file END
     (close-output-port port-log-1)
 
@@ -778,9 +890,6 @@
   )
 
 )
-
-; TODO only for debug
-;(export-android-icons 0 "new-project" "new-version")
 
 (script-fu-register
     _"export-android-icons"                ;function name
