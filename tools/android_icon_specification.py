@@ -5,7 +5,7 @@ generates a case list for android icon creator
 copyright 2025, hanagai
 
 android_icon_specification.py
-version: March 24, 2025; 17:40 JST
+version: March 25, 2025
 
 bash script to create subfolders
 case list for GIMP Script-Fu
@@ -35,12 +35,21 @@ bash script to create subfolders.
   epilog = "use with GIMP script-fu Android Icon Generator"
 
   arguments = (
-    ("project", "project name", "MyProject"),
-    ("version", "version name", "MyVersion"),
-    ("--build", "build type", "main,debug,release"),
-    ("--shape", "icon shape", "square,round"),
-    ("--size", "icon size", "48,72,96,144,192"),
+    ("--config", "configuration class", "ConfigDefault"),
+    ("--project", "project name in Hierarchy", "MyProject"),
+    ("--version", "version name in Hierarchy", "MyVersion"),
+    ("--user_home", "user home directory in Hierarchy", "/home/kuro"),
+    ("--studio_home", "studio home directory in Hierarchy", "AndroidStudioProjects"),
+    ("--src", "source directory in Hierarchy", "app/src"),
+    ("--res", "resource directory in Hierarchy", "res"),
+    ("--mipmap", "mipmap directory in Hierarchy", "mipmap-mdpi"),
+    ("--icon_name", "icon file name in Hierarchy", "ic_launcher.webp"),
+    ("--build", "build type in Iterator", "main,debug,release"),
+    ("--shape", "icon shape in Iterator", "square,round"),
+    ("--size", "icon size in Iterator", "48,72,96,144,192"),
+    ("--dangeon", "dangeon map in Dangeon", "[['build', 'shape'], ['size']]"),
   )
+
   r"""
   key, description, example
   these are used by argparse at main().
@@ -225,7 +234,7 @@ class HierarchyDefault:
   default values on initialization
   """
 
-  directories = (
+  key_list = (
     "user_home",
     "studio_home",
     "project",
@@ -779,6 +788,45 @@ class FloorMixer(Collector):
   def hierarcy(self, conditions):
     return {"hierarcy": self._hierarcy.update(*conditions).get()}
 
+class Dangeon:
+  r"""
+  map used at TreeMaker
+  """
+
+  key_list = ("dangeon")
+
+  _dangeon = [
+    ["build", "shape"],
+    ["size"]
+  ]
+
+  r"""
+  it defines the nested iteration
+    dangeon =
+    [room#0, room#1] floor#0
+    [room#0]         floor#1
+  """
+
+  def __init__(self, dangeon=_dangeon):
+    self._dangeon = dangeon
+
+  def __str__(self):
+    return (
+      f"{self.__class__.__name__}("
+      f"{self.dangeon}, "
+      f")"
+    )
+
+  def dangeon_map(self, iterator):
+    r"""
+    expand the abstract dangeon map to be real one, by the map of iterator
+    """
+    return list(map(lambda x: list(map(iterator.dict_for, x)), self._dangeon))
+
+  @property
+  def dangeon(self):
+    return self._dangeon
+
 
 class TreeMaker:
   r"""
@@ -804,11 +852,11 @@ class TreeMaker:
     [room#0]         floor#1
   """
 
-  def __init__(self, hierarcy=Hierarchy(), adventure_map=Iterator(), dangeon=_dangeon):
+  def __init__(self, hierarcy=Hierarchy(), adventure_map=Iterator(), dangeon=Dangeon()):
     self._hierarcy = hierarcy
     self._adventure_map = adventure_map
-    self._dangeon = dangeon.copy()
-    self._dangeon_map = self.dangeon_map()
+    self._dangeon = dangeon
+    self._dangeon_map = dangeon.dangeon_map(adventure_map)
     self._tree = None
     r"""
     use list for iterations, not tuple
@@ -818,12 +866,6 @@ class TreeMaker:
     floors = FloorMixer(self._hierarcy, self._dangeon_map)
     self._tree = floors.dive()
     return self._tree
-
-  def dangeon_map(self):
-    r"""
-    expand the abstract dangeon map to be real one, by the map of iterator
-    """
-    return list(map(lambda x: list(map(self._adventure_map.dict_for, x)), self._dangeon))
 
 
 r"""
@@ -836,36 +878,36 @@ class Executor:
   handles whole processes
   """
 
-  def __init__(self, args):
-    self._args = args
-    self.parse_args(args)
-    self._iterator_args = {k:self.__getattribute__(k) for k in Iterator.key_list if k in self._keys}
+  def __init__(self, config):
+    self._config = config
+    #self._args = args    #self.parse_args(args)
+    #self._iterator_args = {k:self.__getattribute__(k) for k in Iterator.key_list if k in self._keys}
 
-  def parse_args(self, args):
-    r"""
-    conert argparse argument into properties of this instance
-    """
-    self._keys = args.keys()
-    for k, v in args.items():
-      self.__setattr__(k, self.parse_arg_string(v))
+  # def parse_args(self, args):
+  #   r"""
+  #   convert argparse argument into properties of this instance
+  #   """
+  #   self._keys = args.keys()
+  #   for k, v in args.items():
+  #     self.__setattr__(k, self.parse_arg_string(v))
 
-  def parse_arg_string(self, obj):
-    r"""
-    handles list parameters
-    1,2,3 -> (1,2,3)
-    a,b,c -> ("a","b","c")
-    """
+  # def parse_arg_string(self, obj):
+  #   r"""
+  #   handles list parameters
+  #   1,2,3 -> (1,2,3)
+  #   a,b,c -> ("a","b","c")
+  #   """
 
-    if isinstance(obj, str):
-      quote = '"' if re.search("[^,0-9]", obj) else ""
-      splitted = re.split(",", obj)
-      list_str = f"({quote}" + f"{quote},{quote}".join(splitted) + f"{quote})"
-      return eval(list_str)
-    else:
-      r"""
-      expects `None`
-      """
-      return obj
+  #   if isinstance(obj, str):
+  #     quote = '"' if re.search("[^,0-9]", obj) else ""
+  #     splitted = re.split(",", obj)
+  #     list_str = f"({quote}" + f"{quote},{quote}".join(splitted) + f"{quote})"
+  #     return eval(list_str)
+  #   else:
+  #     r"""
+  #     expects `None`
+  #     """
+  #     return obj
 
   r"""
   the tree structure is something tricky,
@@ -916,7 +958,7 @@ class Executor:
       self.extract_directory(collector, self.node_body(node))
     elif self.is_hierarcy(node):
       hierarcy = node["hierarcy"]
-      directories = hierarcy["directories"]
+      directories = hierarcy["key_list"]
       segments = list(hierarcy[k] for k in directories)
       collector.push(self.build_path_without_file_name(segments))
     else:
@@ -953,7 +995,7 @@ class Executor:
       collector.push(margin + ")")
     elif self.is_hierarcy(node):
       hierarcy = node["hierarcy"]
-      directories = hierarcy["directories"]
+      directories = hierarcy["key_list"]
       segments = list(hierarcy[k] for k in directories)
       self.expand_dir_segments(collector, tab, base_margin, segments)
     else:
@@ -995,8 +1037,8 @@ class Executor:
     build the tree structure
     """
 
-    iterator = Iterator(**(self._iterator_args))
-    self._tree_maker = TreeMaker(Hierarchy(**self._args), iterator)
+    #iterator = Iterator(**(self._iterator_args))
+    self._tree_maker = TreeMaker(self._config.hierarchy(), self._config.iterator(), self._config.dangeon())
     return self._tree_maker.dive()
 
   def make_sh(self):
@@ -1077,10 +1119,10 @@ EOS
     r"""
     print verbose information
     """
-    print(self._args)
-    print(self._keys)
-    print({k: self.__getattribute__(k) for k in self._keys})
-    print(self._iterator_args)
+    #print(self._args)
+    #print(self._keys)
+    #print({k: self.__getattribute__(k) for k in self._keys})
+    #print(self._iterator_args)
     print(self._tree)
 
   def run(self):
@@ -1098,17 +1140,209 @@ EOS
     print('Done!', file=sys.stderr)
 
 
+
+r"""
+customize
+"""
+
+class ConfigBase:
+  r"""
+  Base of configuration classes.
+  Customize a subclass of this to change deafult behavior.
+  """
+
+  arguments = Document.arguments
+
+  @classmethod
+  def class_by_name(cls, name):
+    return getattr(__import__(__name__), name)
+
+  def __init__(self, argv=sys.argv):
+    self._argv = argv
+    self._config = None # will be set at next line
+    parse_known_config = self.parse_args_config(argv)
+    self._arg_config = parse_known_config[0]  # --config only
+    self._args = self.parse_args(parse_known_config[1]) # excluding --config
+    self._effective_args = self.effective_args(self._args)
+    r"""
+    effective args are applied in following order
+    """
+    self._tmp_args = self._effective_args.copy()
+    self._dangeon = self.dangen_args(self._tmp_args)
+    self._iterator = self.iterator_args(self._tmp_args)
+    self._hierarchy = self.hierarchy_args(self._tmp_args)
+
+  def __str__(self):
+    return (
+      f"{self.__class__.__name__}("
+      f"__dict__={self.__dict__}, "
+      f")"
+    )
+
+  def parser(self):
+    return argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog)
+
+  def parse_args_config(self, argv):
+    parser = self.parser()
+    parser.add_argument("--config", help="1st, parse only config to catch changing the world")
+    args = parser.parse_known_args()
+    self._config = args[0].config
+    return args
+
+  def parse_args(self, argv):
+    parser = self.parser()
+    print(self.config_class())
+    for k,d,e in self.config_class().arguments:
+      parser.add_argument(k, help=f"{d} ({e})")
+    return parser.parse_args()
+
+  def effective_args(self, args):
+    r"""
+    explicitly specified args at command line
+    """
+    return {k:v for k,v in args.__dict__.items() if None != v}
+
+  def dangen_args(self, args):
+    return self.pick_args_for_class(Dangeon, args)
+
+  def iterator_args(self, args):
+    return self.pick_args_for_class(Iterator, args)
+
+  def hierarchy_args(self, args):
+    return self.pick_args_for_class(HierarchyDefault, args)
+
+  def class_key_list(self, klass):
+    r"""
+    override this if customized key_list is needed.
+    """
+    return klass.key_list
+
+  def pick_args_for_class(self, klass, args):
+    r"""
+    expects args as temporary dictionary
+    returns subset of dictionary where the key is found in class_key_list
+    remvoe those keys from the temporary dictionary
+    """
+    key_list = self.class_key_list(klass)
+    good_args = {k:self.parse_arg_string(v) for k,v in args.items() if k in key_list}
+    for k in tuple(args.keys()):
+      if k in key_list:
+        args.pop(k)
+    return good_args
+
+  def parse_arg_string(self, obj):
+    r"""
+    handles list parameters
+    1,2,3 -> (1,2,3)
+    a,b,c -> ("a","b","c")
+    ("a","b") -> as is
+    """
+
+    if isinstance(obj, str):
+      if re.search("[\[(]", obj):
+        r"""
+        expects formatted string that can directly eval
+        """
+        list_str = obj
+      else:
+        quote = '"' if re.search("[^,0-9]", obj) else ""
+        splitted = re.split(",", obj)
+        list_str = f"({quote}" + f"{quote},{quote}".join(splitted) + f"{quote})"
+      return eval(list_str)
+    else:
+      r"""
+      expects `None`
+      """
+      return obj
+
+  def divide_list_by_keys(self, keys, list):
+    r"""
+    expects dict.items() as list
+    apply condition true when the key in the list is in keys.
+    """
+    return (self.divide_list_by(lambda x: x[0] in keys, list))
+
+  def divide_list_by(self, condition, list):
+    r"""
+    divide list into two lists by condition, (bad_list, good_list)
+    expects condition as a function that gives False or True.
+    """
+    bad_list = [x for x in list if not condition(x)]
+    good_list = [x for x in list if condition(x)]
+    return (bad_list, good_list)
+
+  def merge_dicts(self, dict_base, dict_up):
+    r"""
+    adds or updates dict_base by dict_up and return new dict
+    """
+    new_dict = {}
+    if not None == dict_base:
+      for k,v in dict_base.items():
+        new_dict[k] = v
+    if not None == dict_up:
+      for k,v in dict_up.items():
+        new_dict[k] = v
+    return new_dict
+
+  r"""
+  for Executor
+  """
+
+  def config_class(self):
+    return self.__class__ if None == self._config else self.__class__.class_by_name(self._config)
+
+  def config(self):
+    r"""
+    executor must use this instead of self
+    """
+    return self if None == self._config else self.__class__.class_by_name(self._config)(self._args)
+
+  def hierarchy(self):
+    return Hierarchy(**(self._hierarchy))
+
+  def iterator(self):
+    return Iterator(**(self._iterator))
+
+  def dangeon(self):
+    return Dangeon(**(self._dangeon))
+
+
+class ConfigDefault(ConfigBase):
+  r"""
+  default config
+  """
+
+class ConfigTest(ConfigBase):
+  r"""
+  small config for test
+  """
+
+  def hierarchy(self):
+    defaults = {
+      "studio_home": "tmp/art_work",
+      "project": "p",
+      "version": "v",
+    }
+    merged = self.merge_dicts(defaults, self._hierarchy)
+    return Hierarchy(**merged)
+
+  def iterator(self):
+    defaults = {
+      "build": ["main"],
+      "size": [96],
+      "shape": ["square"],
+    }
+    merged = self.merge_dicts(defaults, self._iterator)
+    return Iterator(**merged)
+
+
 r"""
 main to be executed
 """
 
 def main():
-  parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog)
-  for k,d,e in Document.arguments:
-    parser.add_argument(k, help=f"{d} ({e})")
-  args = parser.parse_args()
-
-  project = Executor(args.__dict__)
+  config = ConfigDefault()
+  project = Executor(config.config())
   project.run()
 
 
@@ -1117,6 +1351,53 @@ test
 """
 
 class Test:
+
+  def test_config(self):
+    print(ConfigBase)
+
+    #import os
+    #print(os.path.basename(sys.argv[0]))
+    print(sys.argv)
+
+    parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog)
+    #for k,d,e in ConfigDefault.arguments:
+    #  parser.add_argument(k, help=f"{d} ({e})")
+    parser.add_argument("--config")
+    #parser.add_argument("--config2")
+    #args = parser.parse_known_args(["--config"])
+    #args = parser.parse_known_args(ConfigDefault.arguments)
+    #args = parser.parse_args()
+    #args = parser.parse_known_args(sys.argv)
+    args = parser.parse_known_args()
+    print(args)
+    print(args[0].config)
+
+    print(ConfigBase.class_by_name("ConfigDefault"))
+    #print(ConfigBase.class_by_name("ConfigHoge"))
+    config = ConfigDefault if None == args[0].config else ConfigBase.class_by_name(args[0].config)
+    #print(getattr(__import__(__name__), "ConfigDefault")(args))
+    print(config)
+
+    parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog, exit_on_error=False)
+    for k,d,e in config.arguments:
+      parser.add_argument(k, help=f"{d} ({e})")
+    args = parser.parse_args()
+
+    a = ConfigBase()
+    print(a)
+    print(a.config())
+
+    a = config()
+    print(a)
+    print(a.config())
+
+    print(a.divide_list_by(lambda x: x > 5, [1,9,2,8,3,7,4,6,5]))
+    print(a.divide_list_by_keys([1,2,3,5,7], [(1,"x1"), (9,"x9"), (2,"x2"), (8,"x8"), (3,"x3"), (7,"x7"), (4,"x4"), (6,"x6"), (5,"z5")]))
+
+    print(a.hierarchy())
+    print(a.iterator())
+    print(a.dangeon())
+
 
   r"""
   test cases, or hint for debugging...
@@ -1178,11 +1459,11 @@ class Test:
     """
 
     print(HierarchyDefault)
-    print(HierarchyDefault.directories)
+    print(HierarchyDefault.key_list)
     print(HierarchyDefault.__getattribute__(HierarchyDefault, "icon_name"))
     print(HierarchyDefault.__dict__)
     a = HierarchyDefault()
-    print(a.directories)
+    print(a.key_list)
     print(a.__getattribute__("icon_name"))
     print(a.__dict__)
     print(HierarchyDefault.__dict__.items())
@@ -1202,7 +1483,7 @@ class Test:
     print(Hierarchy())
     print(Hierarchy(project="my_special_project", version="lost"))
     print(Hierarchy(age="over 1000", project="my_special_project", version="lost"))
-    print(Hierarchy(directories=("user_home", "icon_name")))
+    print(Hierarchy(key_list=("user_home", "icon_name")))
 
     a = Hierarchy(_bag="can NOT destroy the _bag")
     print(a)
@@ -1313,6 +1594,7 @@ if __name__ == '__main__':
   #Test().show_overview()
   #Test().show_overview_with_mermaid_html()
 
+  #Test().test_config()
   #Test().test_hierarcy_default()
   #Test().test_hierarcy()
   #Test().test_iterator()
