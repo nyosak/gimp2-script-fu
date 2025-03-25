@@ -999,8 +999,8 @@ class MkdirExplorer(FileExplorer):
     super(self.__class__, self).func_h(node, opts)
     segments = opts["collector"].pop()
     path = self.build_path_without_file_name(segments)
-    command = f"mkdir -p {path}"
-    opts["collector"].push(command)
+    #command = f"mkdir -p {path}"
+    opts["collector"].push(path)
 
 
 class GitAddExplorer(FileExplorer):
@@ -1012,8 +1012,8 @@ class GitAddExplorer(FileExplorer):
     super(self.__class__, self).func_h(node, opts)
     segments = opts["collector"].pop()
     path = self.build_path_with_file_name(segments)
-    command = f"git add {path}"
-    opts["collector"].push(command)
+    #command = f"git add {path}"
+    opts["collector"].push(path)
 
 
 class SchemeExplorer(TreeExplorer):
@@ -1132,146 +1132,149 @@ class Executor:
   #     """
   #     return obj
 
-  r"""
-  the tree structure is something tricky,
-    [ # list as nodes
-      ( # tuple as a node
-        {} # item#0 is dict as attributes
-        [] # item#1 is list as child nodes
-      )
-    ]
-  """
+  # r"""
+  # the tree structure is something tricky,
+  #   [ # list as nodes
+  #     ( # tuple as a node
+  #       {} # item#0 is dict as attributes
+  #       [] # item#1 is list as child nodes
+  #     )
+  #   ]
+  # """
 
-  def is_horizontal_list(self, obj):
-    return isinstance(obj, list)
+  # def is_horizontal_list(self, obj):
+  #   return isinstance(obj, list)
 
-  def is_vertical_list(self, obj):
-    return isinstance(obj, tuple)
+  # def is_vertical_list(self, obj):
+  #   return isinstance(obj, tuple)
 
-  def is_hierarchy(self, obj):
-    return isinstance(obj, dict)
+  # def is_hierarchy(self, obj):
+  #   return isinstance(obj, dict)
 
-  def node_attribute(self, node):
-    return node[0]
+  # def node_attribute(self, node):
+  #   return node[0]
 
-  def node_body(self, node):
-    return node[1]
+  # def node_body(self, node):
+  #   return node[1]
 
-  def linux_like(self, segments):
-    r"""
-    root directory start with / ?
-    """
-    return segments[0].startswith("/")
+  # def linux_like(self, segments):
+  #   r"""
+  #   root directory start with / ?
+  #   """
+  #   return segments[0].startswith("/")
 
-  def dir_separator(self, segments):
-    return "/" if self.linux_like(segments) else "\\"
+  # def dir_separator(self, segments):
+  #   return "/" if self.linux_like(segments) else "\\"
 
-  def build_path_without_file_name(self, segments):
-    return self.dir_separator(segments).join(segments[0:-1])
+  # def build_path_without_file_name(self, segments):
+  #   return self.dir_separator(segments).join(segments[0:-1])
 
-  def extract_directory(self, collector, node):
-    r"""
-    traverse tree to find out directory information
-    """
+  # def extract_directory(self, collector, node):
+  #   r"""
+  #   traverse tree to find out directory information
+  #   """
 
-    if self.is_horizontal_list(node):
-      for item in node:
-        self.extract_directory(collector, item)
-    elif self.is_vertical_list(node):
-      self.extract_directory(collector, self.node_body(node))
-    elif self.is_hierarchy(node):
-      hierarchy = node["hierarchy"]
-      directories = hierarchy["key_list"]
-      segments = list(hierarchy[k] for k in directories)
-      collector.push(self.build_path_without_file_name(segments))
-    else:
-      print(f"Node not expected here: {node}", file=sys.stderr)
-      collector.push(f"NOT EXPECTED {node}")
+  #   if self.is_horizontal_list(node):
+  #     for item in node:
+  #       self.extract_directory(collector, item)
+  #   elif self.is_vertical_list(node):
+  #     self.extract_directory(collector, self.node_body(node))
+  #   elif self.is_hierarchy(node):
+  #     hierarchy = node["hierarchy"]
+  #     directories = hierarchy["key_list"]
+  #     segments = list(hierarchy[k] for k in directories)
+  #     collector.push(self.build_path_without_file_name(segments))
+  #   else:
+  #     print(f"Node not expected here: {node}", file=sys.stderr)
+  #     collector.push(f"NOT EXPECTED {node}")
 
-  def to_scheme(self, collector, node, tab, base_margin):
-    r"""
-    traverse tree to transform the structure into scheme list
+  # def to_scheme(self, collector, node, tab, base_margin):
+  #   r"""
+  #   traverse tree to transform the structure into scheme list
 
-    the tree structure will be,
-    ( ; list as nodes
-      ( ; cons as a node
-        ( ; item#0 is list as attributes
-          ( key . value ) ; cons an attribute
-        )
-      .
-        () ; item#1 is list as child nodes
-      )
-    )
-    """
+  #   the tree structure will be,
+  #   ( ; list as nodes
+  #     ( ; cons as a node
+  #       ( ; item#0 is list as attributes
+  #         ( key . value ) ; cons an attribute
+  #       )
+  #     .
+  #       () ; item#1 is list as child nodes
+  #     )
+  #   )
+  #   """
 
-    margin = tab * base_margin
-    if self.is_horizontal_list(node):
-      collector.push(margin + "(")
-      for item in node:
-        self.to_scheme(collector, item, tab, 1 + base_margin)
-      collector.push(margin + ")")
-    elif self.is_vertical_list(node):
-      collector.push(margin + "(")
-      self.dict_to_scheme(collector, tab, 1 + base_margin, self.node_attribute(node))
-      collector.push(margin + ".")
-      self.to_scheme(collector, self.node_body(node), tab, 1 + base_margin)
-      collector.push(margin + ")")
-    elif self.is_hierarchy(node):
-      hierarchy = node["hierarchy"]
-      directories = hierarchy["key_list"]
-      segments = list(hierarchy[k] for k in directories)
-      self.expand_dir_segments(collector, tab, base_margin, segments)
-    else:
-      print(f"Node not expected here: {node}", file=sys.stderr)
-      collector.push(f"NOT EXPECTED {node}")
+  #   margin = tab * base_margin
+  #   if self.is_horizontal_list(node):
+  #     collector.push(margin + "(")
+  #     for item in node:
+  #       self.to_scheme(collector, item, tab, 1 + base_margin)
+  #     collector.push(margin + ")")
+  #   elif self.is_vertical_list(node):
+  #     collector.push(margin + "(")
+  #     self.dict_to_scheme(collector, tab, 1 + base_margin, self.node_attribute(node))
+  #     collector.push(margin + ".")
+  #     self.to_scheme(collector, self.node_body(node), tab, 1 + base_margin)
+  #     collector.push(margin + ")")
+  #   elif self.is_hierarchy(node):
+  #     hierarchy = node["hierarchy"]
+  #     directories = hierarchy["key_list"]
+  #     segments = list(hierarchy[k] for k in directories)
+  #     self.expand_dir_segments(collector, tab, base_margin, segments)
+  #   else:
+  #     print(f"Node not expected here: {node}", file=sys.stderr)
+  #     collector.push(f"NOT EXPECTED {node}")
 
-  def dict_to_scheme(self, collector, tab, base_margin, dict):
-    r"""
-    convert dict to (list (cons) (cons) ...) in scheme
-    """
+  # def dict_to_scheme(self, collector, tab, base_margin, dict):
+  #   r"""
+  #   convert dict to (list (cons) (cons) ...) in scheme
+  #   """
 
-    margin0 = tab * base_margin
-    margin1 = margin0 + tab
-    margin2 = margin1 + tab
-    collector.push(margin0 + "(")
-    for k, v in dict.items():
-      quote = '' if "size" == k else '"'
-      collector.push(margin1 + "(")
-      collector.push(margin2 + f'"{k}"')
-      collector.push(margin1 + ".")
-      collector.push(margin2 + f'{quote}{v}{quote}')
-      collector.push(margin1 + ")")
-    collector.push(margin0 + ")")
+  #   margin0 = tab * base_margin
+  #   margin1 = margin0 + tab
+  #   margin2 = margin1 + tab
+  #   collector.push(margin0 + "(")
+  #   for k, v in dict.items():
+  #     quote = '' if "size" == k else '"'
+  #     collector.push(margin1 + "(")
+  #     collector.push(margin2 + f'"{k}"')
+  #     collector.push(margin1 + ".")
+  #     collector.push(margin2 + f'{quote}{v}{quote}')
+  #     collector.push(margin1 + ")")
+  #   collector.push(margin0 + ")")
 
-  def expand_dir_segments(self, collector, tab, base_margin, segments):
-    r"""
-    convert segment list to (list) in scheme
-    """
+  # def expand_dir_segments(self, collector, tab, base_margin, segments):
+  #   r"""
+  #   convert segment list to (list) in scheme
+  #   """
 
-    margin0 = tab * base_margin
-    margin1 = margin0 + tab
-    collector.push(margin0 + "(")
-    for d in segments:
-      collector.push(margin1 + f'"{d}"')
-    collector.push(margin0 + ")")
+  #   margin0 = tab * base_margin
+  #   margin1 = margin0 + tab
+  #   collector.push(margin0 + "(")
+  #   for d in segments:
+  #     collector.push(margin1 + f'"{d}"')
+  #   collector.push(margin0 + ")")
+
 
   def make_tree(self):
     r"""
     build the tree structure
     """
 
-    #iterator = Iterator(**(self._iterator_args))
-    self._tree_maker = TreeMaker(self._config.hierarchy(), self._config.iterator(), self._config.dangeon())
+    self._tree_maker = TreeMaker(
+      self._config.hierarchy(),
+      self._config.iterator(),
+      self._config.dangeon()
+    )
     return self._tree_maker.dive()
 
-  def make_sh(self):
+  def make_mkdir_sh(self):
     r"""
     make bash script from the tree
     """
 
-    collector = TreeCollector()
-    self.extract_directory(collector, self._tree)
-    directories = collector.get()
+    explorer = MkdirExplorer()
+    directories = explorer.begin(self._tree, {})
     unique = list(set(directories))
     mkdir = "\n".join(
       (f"mkdir -p {d}" for d in unique)
@@ -1286,16 +1289,56 @@ class Executor:
       """
     )
 
+  def make_git_add_sh(self):
+    r"""
+    make bash script from the tree
+    """
+
+    explorer = GitAddExplorer()
+    files = explorer.begin(self._tree, {})
+    unique = list(set(files))
+    git_add = "\n".join(
+      (f"git add {d}" for d in unique)
+    )
+
+    return ("#!/bin/sh"
+      f"""
+# git add files
+
+{git_add}
+
+      """
+    )
+
+#   def make_sh2(self):
+#     r"""
+#     make bash script from the tree
+#     """
+
+#     collector = TreeCollector()
+#     self.extract_directory(collector, self._tree)
+#     directories = collector.get()
+#     unique = list(set(directories))
+#     mkdir = "\n".join(
+#       (f"mkdir -p {d}" for d in unique)
+#     )
+
+#     return ("#!/bin/sh"
+#       f"""
+# # create directories
+
+# {mkdir}
+
+#       """
+#     )
+
   def make_scheme(self):
     r"""
     make scheme list from the tree
     """
 
-    tab = " " * 2
-    base_margin = 3 # number of tabs, not spaces
-    collector = TreeCollector()
-    self.to_scheme(collector, self._tree, tab, base_margin)
-    icon_list = collector.get()
+    explorer = SchemeExplorer()
+    icon_list = explorer.begin(self._tree, {})
     icon_list_string = "\n".join(icon_list)
 
     return ("#!/usr/bin/env tinyscheme"
@@ -1317,6 +1360,38 @@ class Executor:
       """
     )
 
+
+#   def make_scheme2(self):
+#     r"""
+#     make scheme list from the tree
+#     """
+
+#     tab = " " * 2
+#     base_margin = 3 # number of tabs, not spaces
+#     collector = TreeCollector()
+#     self.to_scheme(collector, self._tree, tab, base_margin)
+#     icon_list = collector.get()
+#     icon_list_string = "\n".join(icon_list)
+
+#     return ("#!/usr/bin/env tinyscheme"
+#       f"""
+# ; icon list
+
+# (let
+
+#   (
+#     (icon-list
+#       '
+# {icon_list_string}
+#     )
+#   )
+
+#   icon-list
+# )
+
+#       """
+#     )
+
   def wrap_in_bash(self, string):
     r"""
     include the scheme list in the bash script
@@ -1336,6 +1411,7 @@ EOS
     print the result to stdout
     """
     print(self._sh)
+    print(self.wrap_in_bash(self._sh_git_add))
     print(self.wrap_in_bash(self._scheme))
 
   def verbose(self, file=sys.stdout):
@@ -1346,6 +1422,7 @@ EOS
     #print(self._keys)
     #print({k: self.__getattribute__(k) for k in self._keys})
     #print(self._iterator_args)
+    print(self._config)
     print(self._tree)
 
   def run(self):
@@ -1355,13 +1432,8 @@ EOS
     print('Begin.', file=sys.stderr)
 
     self._tree = self.make_tree()
-
-    test = SchemeExplorer()
-    rc = test.begin(self._tree, {})
-    print(rc)
-    print("\n".join(rc))
-
-    self._sh = self.make_sh()
+    self._sh = self.make_mkdir_sh()
+    self._sh_git_add = self.make_git_add_sh()
     self._scheme = self.make_scheme()
     self.report()
 
