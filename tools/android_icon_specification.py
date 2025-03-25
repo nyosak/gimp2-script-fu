@@ -89,6 +89,16 @@ arguments:
 
 flowchart TB
 
+  Dangeon
+  ConfigBase
+  ConfigDefault
+  ConfigTest
+  TreeExplorer
+  FileExplorer
+  MkdirExplorer
+  GitAddExplorer
+  SchemeExplorer
+
   Document -- define args --> main
 
   HierarchyDefault -- initialize --> Hierarchy
@@ -627,6 +637,9 @@ class Collector:
   def push(self, value):
     self._collection.append(value)
 
+  def pop(self):
+    return self._collection.pop()
+
   def delete(self):
     self._collection = []
 
@@ -740,9 +753,9 @@ class FloorMixer(Collector):
   gather rooms across floors
   """
 
-  def __init__(self, hierarcy, dangeon):
+  def __init__(self, hierarchy, dangeon):
     super(self.__class__, self).__init__()
-    self._hierarcy = hierarcy
+    self._hierarchy = hierarchy
     self._dangeon = list(dangeon)
 
   def is_end(self, floor_number):
@@ -751,9 +764,9 @@ class FloorMixer(Collector):
   def tree_search(self, collector, floor_number = 0):
     if self.is_end(floor_number):
       r"""
-      insert the hierarcy here
+      insert the hierarchy here
       """
-      return self.hierarcy(collector.get())
+      return self.hierarchy(collector.get())
     else:
       floor = self._dangeon[floor_number]
       return list(map(
@@ -785,8 +798,8 @@ class FloorMixer(Collector):
       rooms = RoomMixer(floor)
       return rooms.dive()
 
-  def hierarcy(self, conditions):
-    return {"hierarcy": self._hierarcy.update(*conditions).get()}
+  def hierarchy(self, conditions):
+    return {"hierarchy": self._hierarchy.update(*conditions).get()}
 
 class Dangeon:
   r"""
@@ -852,8 +865,8 @@ class TreeMaker:
     [room#0]         floor#1
   """
 
-  def __init__(self, hierarcy=Hierarchy(), adventure_map=Iterator(), dangeon=Dangeon()):
-    self._hierarcy = hierarcy
+  def __init__(self, hierarchy=Hierarchy(), adventure_map=Iterator(), dangeon=Dangeon()):
+    self._hierarchy = hierarchy
     self._adventure_map = adventure_map
     self._dangeon = dangeon
     self._dangeon_map = dangeon.dangeon_map(adventure_map)
@@ -863,9 +876,219 @@ class TreeMaker:
     """
 
   def dive(self):
-    floors = FloorMixer(self._hierarcy, self._dangeon_map)
+    floors = FloorMixer(self._hierarchy, self._dangeon_map)
     self._tree = floors.dive()
     return self._tree
+
+
+r"""
+tree explorer
+"""
+
+class TreeExplorer:
+  r"""
+  base class to explore the tree
+  """
+
+  def begin(self, node, opts):
+    return self.apply_node(node, opts)
+
+  def apply_node(self, node, opts):
+    match self.node_type(node):
+      case "L":
+        return self.func_l(node, opts)
+      case "N":
+        return self.func_n(node, opts)
+      case "A":
+        return self.func_a(node, opts)
+      case "H":
+        return self.func_h(node, opts)
+      case _:
+        return self.func_else(node, opts)
+
+  def func_l(self, node, opts):
+    return [self.apply_node(item, opts) for item in node]
+
+  def func_n(self, node, opts):
+    return (
+      self.apply_node(self.node_attribute(node), opts),
+      self.apply_node(self.node_body(node), opts)
+    )
+
+  def func_a(self, node, opts):
+    return node
+
+  def func_h(self, node, opts):
+    return node.get("hierarchy")
+
+  def func_else(self, node, opts):
+    return "NOT EXPECTED"
+
+  def node_type(self, node):
+    if isinstance(node, list):
+      return "L"  # nodes
+    elif isinstance(node, tuple):
+      return "N"  # node
+    elif isinstance(node, dict):
+      if None == node.get("hierarchy"):
+        return "A"  # attributes
+      else:
+        return "H"  # hierarchy
+    else:
+      return None
+
+  r"""
+  the tree structure is something tricky,
+    [ # list as nodes
+      ( # tuple as a node
+        {} # item#0 is dict as attributes
+        [] # item#1 is list as child nodes
+      )
+    ]
+  """
+
+  def node_attribute(self, node):
+    return node[0]
+
+  def node_body(self, node):
+    return node[1]
+
+
+class FileExplorer(TreeExplorer):
+  r"""
+  explores the tree to find out file path
+  """
+
+  def begin(self, node, opts):
+    if None == opts.get("collector"):
+      opts["collector"] = TreeCollector()
+    node_result = self.apply_node(node, opts)
+    return opts["collector"].get()
+
+  def func_h(self, node, opts):
+    hierarchy = node.get("hierarchy")
+    directories = hierarchy.get("key_list")
+    segments = list(hierarchy[k] for k in directories)
+    opts["collector"].push(segments)
+
+  def func_else(self, node, opts):
+    opts["collector"].push("NOT EXPECTED")
+
+  def linux_like(self, segments):
+    r"""
+    root directory start with / ?
+    """
+    return segments[0].startswith("/")
+
+  def dir_separator(self, segments):
+    return "/" if self.linux_like(segments) else "\\"
+
+  def build_path_without_file_name(self, segments):
+    return self.dir_separator(segments).join(segments[0:-1])
+
+  def build_path_with_file_name(self, segments):
+    return self.dir_separator(segments).join(segments)
+
+
+class MkdirExplorer(FileExplorer):
+  r"""
+  explores the tree to make bash mkdir command
+  """
+
+  def func_h(self, node, opts):
+    super(self.__class__, self).func_h(node, opts)
+    segments = opts["collector"].pop()
+    path = self.build_path_without_file_name(segments)
+    command = f"mkdir -p {path}"
+    opts["collector"].push(command)
+
+
+class GitAddExplorer(FileExplorer):
+  r"""
+  explores the tree to make bash git add command
+  """
+
+  def func_h(self, node, opts):
+    super(self.__class__, self).func_h(node, opts)
+    segments = opts["collector"].pop()
+    path = self.build_path_with_file_name(segments)
+    command = f"git add {path}"
+    opts["collector"].push(command)
+
+
+class SchemeExplorer(TreeExplorer):
+  r"""
+  expores the tree to make scheme list for GIMP script-fu
+  """
+
+  def __init__(self, base_margin=3, tab=" "*2):
+    self.tab = tab
+    self.base_margin = base_margin
+
+  def begin(self, node, opts):
+    if None == opts.get("collector"):
+      opts["collector"] = TreeCollector()
+    if None == opts.get("margin"):
+      opts["margin"] = self.base_margin
+    if None == opts.get("tab"):
+      opts["tab"] = self.tab
+    node_result = self.apply_node(node, opts)
+    return opts["collector"].get()
+
+  def func_l(self, node, opts):
+    margin = opts["tab"] * opts["margin"]
+    opts["collector"].push(margin + "( #\\L")
+    for item in node:
+      self.apply_node(item, self.margin_plus(opts))
+    opts["collector"].push(margin + ")")
+
+  def func_n(self, node, opts):
+    margin = opts["tab"] * opts["margin"]
+    opts["collector"].push(margin + "( #\\N")
+    self.apply_node(self.node_attribute(node), self.margin_plus(opts)),
+    self.apply_node(self.node_body(node), self.margin_plus(opts))
+    opts["collector"].push(margin + ")")
+
+  def func_a(self, node, opts):
+    margin0 = opts["tab"] * opts["margin"]
+    margin1 = margin0 + opts["tab"]
+    margin2 = margin1 + opts["tab"]
+    opts["collector"].push(margin0 + "( #\\A")
+    for k, v in node.items():
+      quote = '' if "size" == k else '"'
+      opts["collector"].push(margin1 + "(")
+      opts["collector"].push(margin2 + f'"{k}"')
+      opts["collector"].push(margin1 + ".")
+      opts["collector"].push(margin2 + f'{quote}{v}{quote}')
+      opts["collector"].push(margin1 + ")")
+    opts["collector"].push(margin0 + ")")
+
+  def func_h(self, node, opts):
+    hierarchy = node.get("hierarchy")
+    directories = hierarchy.get("key_list")
+    segments = list(hierarchy[k] for k in directories)
+    self.expand_dir_segments(segments, opts)
+
+  def func_else(self, node, opts):
+    opts["collector"].push("NOT EXPECTED")
+
+  def expand_dir_segments(self, segments, opts):
+    r"""
+    convert segment list to (list) in scheme
+    """
+
+    margin0 = opts["tab"] * opts["margin"]
+    margin1 = margin0 + opts["tab"]
+    opts["collector"].push(margin0 + "( #\\H")
+    for d in segments:
+      opts["collector"].push(margin1 + f'"{d}"')
+    opts["collector"].push(margin0 + ")")
+
+  def margin_plus(self, opts):
+    new_opts = {}
+    for k in opts.keys():
+      new_opts[k] = 1 + opts[k] if "margin" == k else opts[k]
+    return new_opts
 
 
 r"""
@@ -925,7 +1148,7 @@ class Executor:
   def is_vertical_list(self, obj):
     return isinstance(obj, tuple)
 
-  def is_hierarcy(self, obj):
+  def is_hierarchy(self, obj):
     return isinstance(obj, dict)
 
   def node_attribute(self, node):
@@ -956,10 +1179,10 @@ class Executor:
         self.extract_directory(collector, item)
     elif self.is_vertical_list(node):
       self.extract_directory(collector, self.node_body(node))
-    elif self.is_hierarcy(node):
-      hierarcy = node["hierarcy"]
-      directories = hierarcy["key_list"]
-      segments = list(hierarcy[k] for k in directories)
+    elif self.is_hierarchy(node):
+      hierarchy = node["hierarchy"]
+      directories = hierarchy["key_list"]
+      segments = list(hierarchy[k] for k in directories)
       collector.push(self.build_path_without_file_name(segments))
     else:
       print(f"Node not expected here: {node}", file=sys.stderr)
@@ -993,10 +1216,10 @@ class Executor:
       collector.push(margin + ".")
       self.to_scheme(collector, self.node_body(node), tab, 1 + base_margin)
       collector.push(margin + ")")
-    elif self.is_hierarcy(node):
-      hierarcy = node["hierarcy"]
-      directories = hierarcy["key_list"]
-      segments = list(hierarcy[k] for k in directories)
+    elif self.is_hierarchy(node):
+      hierarchy = node["hierarchy"]
+      directories = hierarchy["key_list"]
+      segments = list(hierarchy[k] for k in directories)
       self.expand_dir_segments(collector, tab, base_margin, segments)
     else:
       print(f"Node not expected here: {node}", file=sys.stderr)
@@ -1132,6 +1355,12 @@ EOS
     print('Begin.', file=sys.stderr)
 
     self._tree = self.make_tree()
+
+    test = SchemeExplorer()
+    rc = test.begin(self._tree, {})
+    print(rc)
+    print("\n".join(rc))
+
     self._sh = self.make_sh()
     self._scheme = self.make_scheme()
     self.report()
@@ -1453,7 +1682,7 @@ class Test:
       """
     )
 
-  def test_hierarcy_default(self):
+  def test_hierarchy_default(self):
     r"""
     test HierarchyDefault
     """
@@ -1474,7 +1703,7 @@ class Test:
     print(subset)
     print(type(subset))
 
-  def test_hierarcy(self):
+  def test_hierarchy(self):
     r"""
     test Hierarchy
     """
@@ -1595,8 +1824,8 @@ if __name__ == '__main__':
   #Test().show_overview_with_mermaid_html()
 
   #Test().test_config()
-  #Test().test_hierarcy_default()
-  #Test().test_hierarcy()
+  #Test().test_hierarchy_default()
+  #Test().test_hierarchy()
   #Test().test_iterator()
   #Test().test_collector()
   #Test().test_floor_mixer()
