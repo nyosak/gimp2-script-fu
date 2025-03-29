@@ -1057,7 +1057,7 @@ class SchemeExplorer(TreeExplorer):
   expores the tree to make scheme list for GIMP script-fu
   """
 
-  def __init__(self, base_margin=3, tab=" "*2):
+  def __init__(self, base_margin=4, tab=" "*2):
     self.tab = tab
     self.base_margin = base_margin
 
@@ -1219,34 +1219,43 @@ class Executor:
       f"""
 ; icon list
 
-(let
+  (let
 
-  (
+    (
 
-    (hierarchy
-      '{key_list_string}
-    )
+      ; --- variables BEGIN ---
 
-    (arguments
-      '{argument_list_string}
-    )
+      (hierarchy
+        '{key_list_string}
+      )
 
-    (iterator-build
-      '{build_list_string}
-    )
+      (arguments
+        '{argument_list_string}
+      )
 
-    (iterator-shape
-      '{shape_list_string}
-    )
+      (iterator-build
+        '{build_list_string}
+      )
 
-    (icon-list
-      '
+      (iterator-shape
+        '{shape_list_string}
+      )
+
+      (icon-list
+        '
 {icon_list_string}
-    )
-  )
+      )
 
-  icon-list
-)
+      ; --- variables END ---
+
+    )
+
+    hierarchy
+    arguments
+    iterator-build
+    iterator-shape
+    icon-list
+  )
 
       """
     )
