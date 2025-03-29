@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; export_android_icons.scm
-; version: March 24, 2025
+; version: March 29, 2025
 ;
 ; use tools/android_icon_specification.py to customize output.
 ;
@@ -17,6 +17,9 @@
   (let*
     (
 
+
+      ; --- variables BEGIN ---
+
       (hierarchy
         '("user_home" "studio_home" "project" "version" "src" "build" "res" "mipmap" "icon_name")
       )
@@ -25,9 +28,8 @@
         '(#f #f "project" "version" #f #f #f #f #f)
       )
 
-
       (iterator-build
-        '("main" "debug" "release")
+        '("main" "debug")
       )
 
       (iterator-shape
@@ -36,12 +38,9 @@
 
       (icon-list
         '
-        (
-          #\L
-          (
-            #\N
-            (
-              #\A
+        ( #\L
+          ( #\N
+            ( #\A
               (
                 "build"
               .
@@ -53,24 +52,60 @@
                 "square"
               )
             )
-            (
-              #\L
-              (
-                #\N
-                (
-                  #\A
+            ( #\L
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    48
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-mdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    72
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-hdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
                   (
                     "size"
                   .
                     96
                   )
                 )
-                (
-                  #\H
+                ( #\H
                   "/home/kuro"
-                  "tmp/art_work"
-                  "p"
-                  "v"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
                   "app/src"
                   "main"
                   "res"
@@ -78,10 +113,401 @@
                   "ic_launcher.webp"
                 )
               )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    144
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-xxhdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    192
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-xxxhdpi"
+                  "ic_launcher.webp"
+                )
+              )
+            )
+          )
+          ( #\N
+            ( #\A
+              (
+                "build"
+              .
+                "main"
+              )
+              (
+                "shape"
+              .
+                "round"
+              )
+            )
+            ( #\L
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    48
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-mdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    72
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-hdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    96
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-xhdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    144
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-xxhdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    192
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "main"
+                  "res"
+                  "mipmap-xxxhdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+            )
+          )
+          ( #\N
+            ( #\A
+              (
+                "build"
+              .
+                "debug"
+              )
+              (
+                "shape"
+              .
+                "square"
+              )
+            )
+            ( #\L
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    48
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-mdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    72
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-hdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    96
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-xhdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    144
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-xxhdpi"
+                  "ic_launcher.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    192
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-xxxhdpi"
+                  "ic_launcher.webp"
+                )
+              )
+            )
+          )
+          ( #\N
+            ( #\A
+              (
+                "build"
+              .
+                "debug"
+              )
+              (
+                "shape"
+              .
+                "round"
+              )
+            )
+            ( #\L
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    48
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-mdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    72
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-hdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    96
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-xhdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    144
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-xxhdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
+              ( #\N
+                ( #\A
+                  (
+                    "size"
+                  .
+                    192
+                  )
+                )
+                ( #\H
+                  "/home/kuro"
+                  "AndroidStudioProjects"
+                  "MyProject"
+                  "MyVersion"
+                  "app/src"
+                  "debug"
+                  "res"
+                  "mipmap-xxxhdpi"
+                  "ic_launcher_round.webp"
+                )
+              )
             )
           )
         )
       )
+
+      ; --- variables END ---
+
 
       ; parameters
       (image inImage)     ; current image
