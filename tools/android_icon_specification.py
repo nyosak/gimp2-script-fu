@@ -1523,7 +1523,8 @@ main to be executed
 """
 
 def main():
-  config = ConfigDefault()
+  config = Config1()
+  #config = ConfigDefault()
   project = Executor(config.config())
   project.run()
 
