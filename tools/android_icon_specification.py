@@ -5,7 +5,7 @@ generates a case list for android icon creator
 copyright 2025, hanagai
 
 android_icon_specification.py
-version: March 25, 2025
+version: March 29, 2025
 
 bash script to create subfolders
 case list for GIMP Script-Fu
@@ -799,7 +799,8 @@ class FloorMixer(Collector):
       return rooms.dive()
 
   def hierarchy(self, conditions):
-    return {"hierarchy": self._hierarchy.update(*conditions).get()}
+    return {TreeExplorer.MARK_AS_HIERARCHY: self._hierarchy.update(*conditions).get()}
+
 
 class Dangeon:
   r"""
@@ -890,6 +891,8 @@ class TreeExplorer:
   base class to explore the tree
   """
 
+  MARK_AS_HIERARCHY = "Marked as Hierarchy"
+
   def begin(self, node, opts):
     return self.apply_node(node, opts)
 
@@ -919,7 +922,7 @@ class TreeExplorer:
     return node
 
   def func_h(self, node, opts):
-    return node.get("hierarchy")
+    return self.get_hierarchy_contents(node)
 
   def func_else(self, node, opts):
     return "NOT EXPECTED"
@@ -930,10 +933,10 @@ class TreeExplorer:
     elif isinstance(node, tuple):
       return "N"  # node
     elif isinstance(node, dict):
-      if None == node.get("hierarchy"):
-        return "A"  # attributes
-      else:
+      if self.is_marked_as_hierarchy(node):
         return "H"  # hierarchy
+      else:
+        return "A"  # attributes
     else:
       return None
 
@@ -953,6 +956,13 @@ class TreeExplorer:
   def node_body(self, node):
     return node[1]
 
+  def get_hierarchy_contents(self, node):
+    return node.get(self.MARK_AS_HIERARCHY)
+
+  def is_marked_as_hierarchy(self, node):
+    return None != self.get_hierarchy_contents(node)
+
+
 
 class FileExplorer(TreeExplorer):
   r"""
@@ -966,7 +976,7 @@ class FileExplorer(TreeExplorer):
     return opts["collector"].get()
 
   def func_h(self, node, opts):
-    hierarchy = node.get("hierarchy")
+    hierarchy = self.get_hierarchy_contents(node)
     directories = hierarchy.get("key_list")
     segments = list(hierarchy[k] for k in directories)
     opts["collector"].push(segments)
@@ -1064,7 +1074,7 @@ class SchemeExplorer(TreeExplorer):
     opts["collector"].push(margin0 + ")")
 
   def func_h(self, node, opts):
-    hierarchy = node.get("hierarchy")
+    hierarchy = self.get_hierarchy_contents(node)
     directories = hierarchy.get("key_list")
     segments = list(hierarchy[k] for k in directories)
     self.expand_dir_segments(segments, opts)
@@ -1296,9 +1306,8 @@ class Executor:
 
     explorer = GitAddExplorer()
     files = explorer.begin(self._tree, {})
-    unique = list(set(files))
     git_add = "\n".join(
-      (f"git add {d}" for d in unique)
+      (f"git add {d}" for d in files)
     )
 
     return ("#!/bin/sh"
@@ -1341,6 +1350,17 @@ class Executor:
     icon_list = explorer.begin(self._tree, {})
     icon_list_string = "\n".join(icon_list)
 
+    key_list = self._config.hierarchy().key_list
+    argument_key = ("project", "version")
+    argument_list = (f'"{k}"' if k in argument_key else "#f" for k in key_list)
+    key_list_string = '("' + '" "'.join(key_list) + '")'
+    argument_list_string = '(' + ' '.join(argument_list) + ')'
+
+    build_list = self._config.iterator().build
+    shape_list = self._config.iterator().shape
+    build_list_string = '("' + '" "'.join(build_list) + '")'
+    shape_list_string = '("' + '" "'.join(shape_list) + '")'
+
     return ("#!/usr/bin/env tinyscheme"
       f"""
 ; icon list
@@ -1348,6 +1368,23 @@ class Executor:
 (let
 
   (
+
+    (hierarchy
+      '{key_list_string}
+    )
+
+    (arguments
+      '{argument_list_string}
+    )
+
+    (iterator-build
+      '{build_list_string}
+    )
+
+    (iterator-shape
+      '{shape_list_string}
+    )
+
     (icon-list
       '
 {icon_list_string}
@@ -1492,10 +1529,10 @@ class ConfigBase:
 
   def parse_args(self, argv):
     parser = self.parser()
-    print(self.config_class())
+    #print(self.config_class)
     for k,d,e in self.config_class().arguments:
       parser.add_argument(k, help=f"{d} ({e})")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
   def effective_args(self, args):
     r"""
@@ -1613,6 +1650,7 @@ class ConfigDefault(ConfigBase):
   default config
   """
 
+
 class ConfigTest(ConfigBase):
   r"""
   small config for test
@@ -1632,6 +1670,27 @@ class ConfigTest(ConfigBase):
       "build": ["main"],
       "size": [96],
       "shape": ["square"],
+    }
+    merged = self.merge_dicts(defaults, self._iterator)
+    return Iterator(**merged)
+
+
+class Config1(ConfigBase):
+  r"""
+  another config for my primary use
+  no release icons
+  """
+
+  def hierarchy(self):
+    defaults = {
+      "user_home": "/home/kuro",
+    }
+    merged = self.merge_dicts(defaults, self._hierarchy)
+    return Hierarchy(**merged)
+
+  def iterator(self):
+    defaults = {
+      "build": ["main", "debug"],
     }
     merged = self.merge_dicts(defaults, self._iterator)
     return Iterator(**merged)
