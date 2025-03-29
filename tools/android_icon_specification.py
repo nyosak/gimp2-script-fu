@@ -90,16 +90,21 @@ arguments:
 flowchart TB
 
   Dangeon
-  ConfigBase
-  ConfigDefault
-  ConfigTest
-  TreeExplorer
-  FileExplorer
-  MkdirExplorer
-  GitAddExplorer
-  SchemeExplorer
 
-  Document -- define args --> main
+  ConfigBase --> ConfigDefault
+  ConfigBase --> ConfigTest
+  ConfigBase --> Config1
+
+  Hierarchy -- customised --> config
+  Iterator -- customised --> config
+  Dangeon -- customised --> config
+
+  TreeExplorer --> FileExplorer
+  FileExplorer --> MkdirExplorer --> bash1
+  FileExplorer --> GitAddExplorer --> bash2
+  TreeExplorer --> SchemeExplorer --> scheme
+
+  Document -- define args --> ConfigBase
 
   HierarchyDefault -- initialize --> Hierarchy
   Instruction -- update --> Hierarchy
@@ -108,8 +113,9 @@ flowchart TB
   Collector -- subclass --> TreeCollector
   Collector -- subclass --> LeafCollector
 
-  Hierarchy -- directory --> TreeMaker
-  Iterator -- "dangeon map" --> TreeMaker
+  config -- Hierarchy  --> TreeMaker
+  config -- Iterator  --> TreeMaker
+  config -- Dangeon --> TreeMaker
   TreeMaker -- deeper --> FloorMixer -- deeper --> RoomMixer
 
   FloorMixer -- gather ----> LeafCollector
@@ -121,21 +127,24 @@ flowchart TB
   LeafCollector -- leaf --> FloorMixer
   LeafCollector -- leaf --> RoomMixer
 
-  main("main()") -- run --> Executor
+  main("main()") -- run ------> Executor
   Executor -- run --> TreeMaker
 
+  main -- args ---> ConfigDefault -- config ---> Executor
+
   TreeMaker -- create --> the_tree
-  the_tree -- transform --> bash
-  the_tree -- transform --> scheme
+  the_tree -- transform --> explorer
 
   Executor --- the_tree[(the tree)]
-  Executor --- bash[(bash mkdir)]
+  Executor --- bash1[(bash mkdir)]
+  Executor --- bash2[(bash gid add)]
   Executor --- scheme[(scheme list)]
 
   command([command line]) ----> main
-  bash -- stdout --> output([output result])
+  bash1 -- stdout --> output([output result])
+  bash2 -- stdout --> output([output result])
   scheme -- stdout --> output
-  customize([customize]) ----> HierarchyDefault
+  customize([customize]) ------> config
 
   Test
 
@@ -148,6 +157,7 @@ subgraph hierarchies
   Hierarchy
   Iterator
   Instruction
+  Dangeon
 end
 
 subgraph collectors
@@ -162,12 +172,28 @@ subgraph tree
   TreeMaker
 end
 
+subgraph explorer
+  TreeExplorer
+  FileExplorer
+  MkdirExplorer
+  GitAddExplorer
+  SchemeExplorer
+end
+
 subgraph runner
   Executor
   main
   the_tree
-  bash
+  bash1
+  bash2
   scheme
+end
+
+subgraph config
+  ConfigBase
+  ConfigDefault
+  ConfigTest
+  Config1
 end
 
 subgraph tests
@@ -1711,63 +1737,18 @@ test
 """
 
 class Test:
-
-  def test_config(self):
-    print(ConfigBase)
-
-    #import os
-    #print(os.path.basename(sys.argv[0]))
-    print(sys.argv)
-
-    parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog)
-    #for k,d,e in ConfigDefault.arguments:
-    #  parser.add_argument(k, help=f"{d} ({e})")
-    parser.add_argument("--config")
-    #parser.add_argument("--config2")
-    #args = parser.parse_known_args(["--config"])
-    #args = parser.parse_known_args(ConfigDefault.arguments)
-    #args = parser.parse_args()
-    #args = parser.parse_known_args(sys.argv)
-    args = parser.parse_known_args()
-    print(args)
-    print(args[0].config)
-
-    print(ConfigBase.class_by_name("ConfigDefault"))
-    #print(ConfigBase.class_by_name("ConfigHoge"))
-    config = ConfigDefault if None == args[0].config else ConfigBase.class_by_name(args[0].config)
-    #print(getattr(__import__(__name__), "ConfigDefault")(args))
-    print(config)
-
-    parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog, exit_on_error=False)
-    for k,d,e in config.arguments:
-      parser.add_argument(k, help=f"{d} ({e})")
-    args = parser.parse_args()
-
-    a = ConfigBase()
-    print(a)
-    print(a.config())
-
-    a = config()
-    print(a)
-    print(a.config())
-
-    print(a.divide_list_by(lambda x: x > 5, [1,9,2,8,3,7,4,6,5]))
-    print(a.divide_list_by_keys([1,2,3,5,7], [(1,"x1"), (9,"x9"), (2,"x2"), (8,"x8"), (3,"x3"), (7,"x7"), (4,"x4"), (6,"x6"), (5,"z5")]))
-
-    print(a.hierarchy())
-    print(a.iterator())
-    print(a.dangeon())
-
-
   r"""
   test cases, or hint for debugging...
   """
+
+  def __init__(self, *args):
+    self.args = args
 
   def show_document(self):
     r"""
     show all documents
     """
-    self.show_overview_with_mermaid_html()
+    print(self.md_overview())
     self.show_origin()
 
   def show_usage(self):
@@ -1784,17 +1765,28 @@ class Test:
 
   def show_overview(self):
     r"""
-    show the 1st jotting
+    show the mermaid overview
     """
     print(Document.overview)
 
-  def show_overview_with_mermaid_html(self):
+  def md_overview(self):
     r"""
-    include html to call mermaid
+    markdown flavored mermaid overview
+    """
+    return (
+      f"""
+```mermaid
+{Document.overview}
+```
+      """
+    )
+
+  def html_overview(self):
+    r"""
+    html flavored mermaid overview
     """
     params = "{ startOnLoad: true }"
-    print(
-      f"""
+    return f"""
 <html>
   <body>
     <h1>overview</h1>
@@ -1811,7 +1803,12 @@ class Test:
   </body>
 </html>
       """
-    )
+
+  def show_overview_with_mermaid_html(self):
+    r"""
+    include html to call mermaid
+    """
+    print(self.html_overview())
 
   def test_hierarchy_default(self):
     r"""
@@ -1931,6 +1928,52 @@ class Test:
     print(a.__getattribute__("size"))
     a.run()
     print(a._tree)
+
+  def test_config(self):
+    print(ConfigBase)
+
+    #import os
+    #print(os.path.basename(sys.argv[0]))
+    print(sys.argv)
+
+    parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog)
+    #for k,d,e in ConfigDefault.arguments:
+    #  parser.add_argument(k, help=f"{d} ({e})")
+    parser.add_argument("--config")
+    #parser.add_argument("--config2")
+    #args = parser.parse_known_args(["--config"])
+    #args = parser.parse_known_args(ConfigDefault.arguments)
+    #args = parser.parse_args()
+    #args = parser.parse_known_args(sys.argv)
+    args = parser.parse_known_args()
+    print(args)
+    print(args[0].config)
+
+    print(ConfigBase.class_by_name("ConfigDefault"))
+    #print(ConfigBase.class_by_name("ConfigHoge"))
+    config = ConfigDefault if None == args[0].config else ConfigBase.class_by_name(args[0].config)
+    #print(getattr(__import__(__name__), "ConfigDefault")(args))
+    print(config)
+
+    parser = argparse.ArgumentParser(prog=Document.prog, description=Document.description, epilog=Document.epilog, exit_on_error=False)
+    for k,d,e in config.arguments:
+      parser.add_argument(k, help=f"{d} ({e})")
+    args = parser.parse_args()
+
+    a = ConfigBase()
+    print(a)
+    print(a.config())
+
+    a = config()
+    print(a)
+    print(a.config())
+
+    print(a.divide_list_by(lambda x: x > 5, [1,9,2,8,3,7,4,6,5]))
+    print(a.divide_list_by_keys([1,2,3,5,7], [(1,"x1"), (9,"x9"), (2,"x2"), (8,"x8"), (3,"x3"), (7,"x7"), (4,"x4"), (6,"x6"), (5,"z5")]))
+
+    print(a.hierarchy())
+    print(a.iterator())
+    print(a.dangeon())
 
   def test_misc(self):
     r"""
