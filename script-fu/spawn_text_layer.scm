@@ -2,7 +2,7 @@
 ; copyright 2025, hanagai
 ;
 ; spawn_text_layer.scm
-; version: March 10, 2025
+; version: April 3, 2025
 ;
 ; duplicates current layter (must be a text layer)
 ; modify the text by the given text
@@ -17,7 +17,7 @@
           (inText inText)  ; the text to be set
           (newLayer)  ; the layer to be created
           (layerIsTextLayer #f)  ; flag to check if the layer is a text layer
-          (newLayerName (if (is-blank? inText) "spawned" inText))  ; the name of the new layer
+          (newLayerName "")  ; the name of the new layer
 
           (UPON_LAYER -1)  ; the layer to be created upon
           (NO_PARENT_LAYER 0)  ; no parent layer
@@ -121,6 +121,7 @@
     )
 
     ; duplicate the layer
+    (set! newLayerName (if (is-blank? inText) "spawned" inText))
     (set! newLayer (car (gimp-layer-copy layer TRUE)))
     (gimp-image-insert-layer image newLayer NO_PARENT_LAYER UPON_LAYER)
     (gimp-item-set-name newLayer newLayerName)
